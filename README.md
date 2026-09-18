@@ -1,5 +1,7 @@
 # Product Lab
 
+### Live: [DeckCheck](https://theajitnayak.github.io/product-lab/) — drop a PowerPoint in and see how much of it is still editable
+
 Experiments in finding a problem worth solving. Each folder is one attempt, kept
 whether it worked or not, with the evidence that led to it and the reason it was
 continued or parked.
@@ -13,6 +15,7 @@ evidence actually said, and what happened next.
 | | Experiment | Problem | Status | Why |
 | --- | --- | --- | --- | --- |
 | 01 | [deckcheck](deckcheck/) | AI slide tools export PowerPoint files you cannot edit | **Active** | Strongest demand evidence of any candidate, including the vendor admitting it |
+
 | 02 | [blast-radius](blast-radius/) | AI changelogs bury what broke under what launched | **Parked** | Idea was sound, market is saturated and the audience does not pay |
 | 03 | [deckbuild](deckbuild/) | Rebuilding a broken deck natively | **Active** | The paid half of 01 |
 

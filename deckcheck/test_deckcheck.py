@@ -143,6 +143,47 @@ class EndToEndTests(unittest.TestCase):
         self.assertIn("score", json.loads(result.stdout))
 
 
+@unittest.skipUnless((SAMPLES / "native-deck.pptx").exists(),
+                     "run make_samples.py first")
+class BatchTests(unittest.TestCase):
+    def test_folder_audits_every_deck(self):
+        reports, failures = deckcheck.audit_folder(SAMPLES)
+        self.assertGreaterEqual(len(reports), 2)
+        self.assertEqual(failures, [])
+        self.assertEqual({r["file"] for r in reports},
+                         {p.name for p in SAMPLES.glob("*.pptx")})
+
+    def test_report_separates_good_from_bad(self):
+        reports, failures = deckcheck.audit_folder(SAMPLES)
+        text = deckcheck.render_folder(reports, failures)
+        self.assertIn("Median score", text)
+        self.assertIn("Dead slides in total", text)
+        self.assertIn("native-deck.pptx", text)
+
+    def test_unreadable_file_is_reported_not_skipped(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            broken = Path(folder) / "broken.pptx"
+            broken.write_bytes(b"this is not a zip")
+            reports, failures = deckcheck.audit_folder(folder)
+            self.assertEqual(reports, [])
+            self.assertEqual(len(failures), 1)
+            self.assertIn("broken.pptx", deckcheck.render_folder(reports, failures))
+
+    def test_empty_folder_says_so(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            reports, failures = deckcheck.audit_folder(folder)
+            self.assertIn("No readable decks", deckcheck.render_folder(reports, failures))
+
+    def test_temporary_office_lock_files_ignored(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / "~$open.pptx").write_bytes(b"lock")
+            reports, failures = deckcheck.audit_folder(folder)
+            self.assertEqual((reports, failures), ([], []))
+
+
 class FailureTests(unittest.TestCase):
     def test_missing_file_reports_cleanly(self):
         result = subprocess.run(

@@ -274,13 +274,78 @@ def render(report):
     return "\n".join(lines)
 
 
+def audit_folder(folder):
+    """Audit every deck in a folder. Unreadable files are reported, not skipped."""
+    decks = sorted(p for p in Path(folder).rglob("*")
+                   if p.suffix.lower() in {".pptx", ".potx"} and not p.name.startswith("~$"))
+    reports, failures = [], []
+    for deck in decks:
+        try:
+            reports.append(audit(deck))
+        except (OSError, zipfile.BadZipFile, ValueError) as exc:
+            failures.append((deck.name, str(exc)))
+    return reports, failures
+
+
+def _failure_list(failures):
+    return ["## Could not read", ""] + [f"- {name}: {why}" for name, why in failures] + [""]
+
+
+def render_folder(reports, failures):
+    if not reports:
+        # Say why, rather than leaving someone staring at an empty result.
+        head = ["# DeckCheck: batch report", "", "No readable decks found.", ""]
+        return "\n".join(head + (_failure_list(failures) if failures else []))
+    scores = sorted(r["score"] for r in reports)
+    middle = scores[len(scores) // 2]
+    dead_decks = [r for r in reports if r["flattened_slides"]]
+    total_dead = sum(len(r["flattened_slides"]) for r in reports)
+    total_slides = sum(r["slides"] for r in reports)
+
+    lines = ["# DeckCheck: batch report", "",
+             f"{len(reports)} decks, {total_slides} slides.", "",
+             "| Measure | Value |", "| --- | --- |",
+             f"| Median score | {middle} |",
+             f"| Lowest score | {scores[0]} |",
+             f"| Decks with at least one dead slide | {len(dead_decks)} of {len(reports)} |",
+             f"| Dead slides in total | {total_dead} ({total_dead / total_slides:.1%} of all slides) |",
+             f"| Decks with no live charts but some pictures | "
+             f"{sum(1 for r in reports if r['pictures'] and not r['native_charts'])} |",
+             f"| Decks using a font that will substitute | "
+             f"{sum(1 for r in reports if r['fonts_at_risk'])} |", "",
+             "## Every deck", "", "| Deck | Score | Slides | Dead | Charts | Risky fonts |",
+             "| --- | ---: | ---: | ---: | ---: | ---: |"]
+    for report in sorted(reports, key=lambda r: r["score"]):
+        lines.append(f"| {report['file']} | {report['score']} | {report['slides']} | "
+                     f"{len(report['flattened_slides'])} | {report['native_charts']} | "
+                     f"{len(report['fonts_at_risk'])} |")
+    if failures:
+        lines += [""] + _failure_list(failures)
+    lines.append("")
+    return "\n".join(lines)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Find out how much of a deck is really editable")
-    parser.add_argument("deck", type=Path)
+    parser.add_argument("deck", type=Path, help="A .pptx file, or a folder of them")
     parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
     parser.add_argument("--min-score", type=int, default=None,
                         help="Exit 1 when the deck scores below this")
     args = parser.parse_args()
+
+    if args.deck.is_dir():
+        reports, failures = audit_folder(args.deck)
+        if args.format == "json":
+            print(json.dumps({"decks": reports,
+                              "unreadable": [{"file": n, "error": e} for n, e in failures]},
+                             indent=2))
+        else:
+            print(render_folder(reports, failures))
+        if args.min_score is not None:
+            below = [r for r in reports if r["score"] < args.min_score]
+            return 1 if below else 0
+        return 0
+
     try:
         report = audit(args.deck)
     except (OSError, zipfile.BadZipFile, ValueError) as exc:

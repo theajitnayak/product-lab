@@ -19,6 +19,10 @@ have the problem, before they are sold the fix.
 
 **How much of this deck can you actually edit?**
 
+### [Try it in your browser](https://theajitnayak.github.io/product-lab/)
+
+No install, no signup, nothing uploaded. The file is read in the page.
+
 AI slide tools build a beautiful first draft. Then you export to PowerPoint and
 the words are pixels. Text boxes shift, fonts substitute, charts become pictures
 of charts, and whole slides arrive as a single flat image you cannot touch. You
@@ -67,6 +71,28 @@ python deckcheck.py samples/flattened-deck.pptx
 A slide is counted unusable when a single picture covers 82% of it and fewer
 than 25 live characters remain. Both thresholds are constants at the top of
 [deckcheck.py](deckcheck.py). Disagree with them and change them.
+
+## Audit a whole folder
+
+Point it at a directory and it scores everything inside, recursively.
+
+```bash
+python deckcheck.py ~/decks
+```
+
+```
+6 decks, 65 slides.
+
+| Median score | 88 |
+| Lowest score | 25 |
+| Decks with at least one dead slide | 2 of 6 |
+| Dead slides in total | 6 (9.2% of all slides) |
+| Decks with no live charts but some pictures | 4 |
+```
+
+Then a row per deck, sorted worst first. Files it cannot read are listed with the
+reason rather than quietly skipped, and Office lock files (`~$name.pptx`) are
+ignored.
 
 ## Use it as a gate
 
