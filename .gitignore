@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+private/
+clients/
+*.log
+
+# Generated demo decks. Rebuild with: python make_samples.py
+deckcheck/samples/

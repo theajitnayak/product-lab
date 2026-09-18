@@ -1,0 +1,33 @@
+name: Experiments
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  deckcheck:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.10', '3.12']
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: deckcheck
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build the sample decks
+        run: |
+          python -m pip install --quiet python-pptx
+          python make_samples.py
+      - name: Tests
+        run: python -m unittest discover -p "test_*.py" -v
+      - name: A native deck passes the gate
+        run: python deckcheck.py samples/native-deck.pptx --min-score 85
+      - name: A flattened deck fails the gate
+        shell: bash
+        run: |
+          if python deckcheck.py samples/flattened-deck.pptx --min-score 70; then
+            echo "Expected the flattened deck to fail"; exit 1
+          fi

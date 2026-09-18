@@ -1,0 +1,441 @@
+<title>Blast Radius</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #F4F6F8;
+    --surface: #FFFFFF;
+    --surface-2: #EDF0F4;
+    --ink: #14181F;
+    --muted: #5A6472;
+    --faint: #8A93A1;
+    --rule: #DBE0E8;
+    --accent: #2E4B6B;
+    --accent-soft: #E4EAF2;
+    --critical: #B3261E;
+    --critical-soft: #FBE9E7;
+    --warning: #8A5A00;
+    --warning-soft: #FBF0DC;
+    --ok: #1E6E42;
+    --ok-soft: #E3F1E8;
+    --sample: #6B3FA0;
+    --sample-soft: #F0E9F8;
+    --shadow: 0 1px 2px rgba(20, 24, 31, .06), 0 1px 1px rgba(20, 24, 31, .04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0F1319;
+      --surface: #161B23;
+      --surface-2: #1D242E;
+      --ink: #E6EAF0;
+      --muted: #9AA4B2;
+      --faint: #6D7686;
+      --rule: #29313D;
+      --accent: #8FB3DC;
+      --accent-soft: #1B2734;
+      --critical: #F2877D;
+      --critical-soft: #2E1A18;
+      --warning: #E0B166;
+      --warning-soft: #2B2317;
+      --ok: #73C79A;
+      --ok-soft: #14271C;
+      --sample: #C4A5E8;
+      --sample-soft: #241B31;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0F1319;
+    --surface: #161B23;
+    --surface-2: #1D242E;
+    --ink: #E6EAF0;
+    --muted: #9AA4B2;
+    --faint: #6D7686;
+    --rule: #29313D;
+    --accent: #8FB3DC;
+    --accent-soft: #1B2734;
+    --critical: #F2877D;
+    --critical-soft: #2E1A18;
+    --warning: #E0B166;
+    --warning-soft: #2B2317;
+    --ok: #73C79A;
+    --ok-soft: #14271C;
+    --sample: #C4A5E8;
+    --sample-soft: #241B31;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 16px; }
+
+  .ribbon {
+    background: var(--sample-soft);
+    border-bottom: 1px solid var(--rule);
+    color: var(--sample);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding-block: 7px;
+  }
+  .ribbon .wrap { display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+  .ribbon b { font-weight: 500; }
+  .ribbon span { color: var(--muted); text-transform: none; letter-spacing: 0; font-size: 12px; }
+
+  header.masthead { border-bottom: 1px solid var(--rule); background: var(--surface); }
+  header.masthead .wrap { padding-block: 22px 18px; }
+  .wordmark {
+    font-family: Archivo, ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700; font-size: clamp(26px, 5vw, 34px);
+    letter-spacing: -.022em; margin: 0; text-wrap: balance;
+  }
+  .wordmark em { font-style: normal; color: var(--accent); }
+  .tagline { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
+    background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin-top: 20px; }
+  .stat { background: var(--surface); padding: 12px 14px; }
+  .stat .n { font-family: Archivo, sans-serif; font-weight: 700; font-size: 26px;
+    font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stat .k { font-family: "IBM Plex Mono", monospace; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); margin-top: 3px; }
+  .stat.is-critical .n { color: var(--critical); }
+  .stat.is-warning .n { color: var(--warning); }
+  .stat.is-ok .n { color: var(--ok); }
+
+  main.wrap { padding-block: 26px 40px; display: grid; grid-template-columns: 268px 1fr; gap: 28px; align-items: start; }
+  @media (max-width: 860px) { main.wrap { grid-template-columns: 1fr; gap: 22px; } }
+
+  aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 14px); }
+  @media (max-width: 860px) { aside { position: static; } }
+  .panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; box-shadow: var(--shadow); }
+  .panel h2 { font-family: "IBM Plex Mono", monospace; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--muted); margin: 0; padding: 13px 15px 10px; font-weight: 500; }
+  .stack-list { list-style: none; margin: 0; padding: 0 7px 9px; }
+  .stack-list li { margin: 0; }
+  .stack-list label {
+    display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 5px;
+    cursor: pointer; font-size: 14px;
+  }
+  .stack-list label:hover { background: var(--surface-2); }
+  .stack-list input { accent-color: var(--accent); width: 15px; height: 15px; flex: none; margin: 0; }
+  .stack-list .count { margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+    color: var(--faint); font-variant-numeric: tabular-nums; }
+  .panel-foot { border-top: 1px solid var(--rule); padding: 11px 15px; display: flex; gap: 14px; }
+  .linkish { background: none; border: 0; padding: 0; font: inherit; font-size: 13px;
+    color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .linkish:hover { opacity: .75; }
+
+  .feed-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .feed-head h2 { font-family: Archivo, sans-serif; font-size: 17px; margin: 0; letter-spacing: -.01em; }
+  .feed-head .note { color: var(--muted); font-size: 13.5px; }
+
+  .feed { display: flex; flex-direction: column; gap: 9px; }
+  .item {
+    background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--rule);
+    border-radius: 7px; padding: 13px 15px; box-shadow: var(--shadow);
+  }
+  .item[data-sev="breaking"] { border-left-color: var(--critical); }
+  .item[data-sev="removal"]  { border-left-color: var(--critical); }
+  .item[data-sev="limit"]    { border-left-color: var(--warning); }
+  .item[data-sev="pricing"]  { border-left-color: var(--warning); }
+  .item[data-sev="addition"] { border-left-color: var(--ok); }
+
+  .item-top { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; margin-bottom: 5px; }
+  .tag {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .07em; padding: 2px 7px; border-radius: 3px; font-weight: 500;
+  }
+  .tag.sev-breaking, .tag.sev-removal { background: var(--critical-soft); color: var(--critical); }
+  .tag.sev-limit, .tag.sev-pricing { background: var(--warning-soft); color: var(--warning); }
+  .tag.sev-addition { background: var(--ok-soft); color: var(--ok); }
+  .tag.vendor { background: var(--accent-soft); color: var(--accent); }
+  .tag.sample { background: var(--sample-soft); color: var(--sample); }
+  .item-top time { margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--faint); }
+  @media (max-width: 520px) { .item-top time { margin-left: 0; } }
+
+  .item h3 { margin: 0 0 5px; font-size: 15.5px; font-weight: 600; line-height: 1.4; text-wrap: balance; }
+  .impact { margin: 0 0 9px; font-size: 14px; }
+  .impact b { color: var(--critical); font-weight: 600; }
+  .item[data-sev="addition"] .impact b, .item[data-sev="pricing"] .impact b { color: var(--warning); }
+
+  .receipt {
+    border-top: 1px dashed var(--rule); padding-top: 8px; display: flex; gap: 8px 14px;
+    flex-wrap: wrap; align-items: baseline;
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--muted);
+  }
+  .receipt .src { color: var(--accent); word-break: break-all; }
+  .verdict { font-weight: 500; }
+  .verdict.v-verified { color: var(--ok); }
+  .verdict.v-claimed { color: var(--warning); }
+  .verdict.v-unverified { color: var(--faint); }
+
+  .empty { background: var(--surface); border: 1px dashed var(--rule); border-radius: 7px;
+    padding: 30px 18px; text-align: center; color: var(--muted); }
+
+  .how { border-top: 1px solid var(--rule); background: var(--surface); margin-top: 8px; }
+  .how .wrap { padding-block: 26px 34px; }
+  .how h2 { font-family: Archivo, sans-serif; font-size: 17px; margin: 0 0 4px; }
+  .how > .wrap > p { color: var(--muted); margin: 0 0 18px; max-width: 64ch; }
+  .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; margin: 0; padding: 0; }
+  .rules div { border-top: 2px solid var(--accent); padding-top: 10px; }
+  .rules dt { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+  .rules dd { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="ribbon">
+  <div class="wrap">
+    <b>Sample data</b>
+    <span>Every entry below is an illustrative mock-up written to show the format. None are real change notices. Do not act on them.</span>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <h1 class="wordmark">Blast <em>Radius</em></h1>
+    <p class="tagline">The AI changelog that leads with what broke. Removals, rate limit cuts and price rises
+      first, new features last, filtered to the stack you actually ship on. Every line carries its source.</p>
+
+    <div class="summary" id="summary">
+      <div class="stat is-critical"><div class="n" id="n-breaking">0</div><div class="k">Breaking / removed</div></div>
+      <div class="stat is-warning"><div class="n" id="n-cost">0</div><div class="k">Limits &amp; pricing</div></div>
+      <div class="stat is-ok"><div class="n" id="n-add">0</div><div class="k">Additions</div></div>
+      <div class="stat"><div class="n" id="n-window">7</div><div class="k">Day window</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <aside>
+    <div class="panel">
+      <h2>Your stack</h2>
+      <ul class="stack-list" id="stack"></ul>
+      <div class="panel-foot">
+        <button class="linkish" id="all">Select all</button>
+        <button class="linkish" id="none">Clear</button>
+      </div>
+    </div>
+  </aside>
+
+  <section>
+    <div class="feed-head">
+      <h2>What hits you this week</h2>
+      <span class="note" id="counter"></span>
+    </div>
+    <div class="feed" id="feed"></div>
+  </section>
+</main>
+
+<section class="how">
+  <div class="wrap">
+    <h2>Why this is not another AI newsletter</h2>
+    <p>On a big launch morning the major AI newsletters overlap roughly 80 percent on the lead story. The news is
+      a commodity. What nobody sends you is the small print that breaks your build.</p>
+    <dl class="rules">
+      <div>
+        <dt>Losses lead</dt>
+        <dd>Removals, sunsets, rate limit cuts and price rises sort above every new feature. A launch you miss
+          costs you nothing. A sunset you miss wakes you at 3am.</dd>
+      </div>
+      <div>
+        <dt>Filtered to your stack</dt>
+        <dd>You declare what you build on. Everything else is silence. A change to a model you never call is not
+          news, it is noise.</dd>
+      </div>
+      <div>
+        <dt>Every claim carries a receipt</dt>
+        <dd>Source URL, publish date, and whether it was read on the vendor's own page or is still just a claim.
+          Nothing is stated from memory.</dd>
+      </div>
+      <div>
+        <dt>Quiet weeks stay quiet</dt>
+        <dd>Nothing shipped is a valid answer. No filler, no roundups, no speculation to keep a slot warm.</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<script>
+  var STACK = [
+    { id: "anthropic", label: "Anthropic / Claude" },
+    { id: "openai",    label: "OpenAI / ChatGPT" },
+    { id: "google",    label: "Google DeepMind" },
+    { id: "cursor",    label: "Cursor" },
+    { id: "vercel",    label: "Vercel" },
+    { id: "github",    label: "GitHub" },
+    { id: "replit",    label: "Replit" },
+    { id: "supabase",  label: "Supabase" }
+  ];
+
+  var WEIGHT = { removal: 0, breaking: 1, limit: 2, pricing: 3, addition: 4 };
+  var LABEL = { removal: "Removed", breaking: "Breaking", limit: "Limit cut",
+                pricing: "Price rise", addition: "Added" };
+
+  // Illustrative mock-ups. Not real change notices.
+  var ITEMS = [
+    { vendor: "openai", sev: "removal", date: "2026-09-17",
+      title: "Legacy completions endpoint reaches end of life on 12 November",
+      impact: "Any call still pointing at the old completions path <b>stops returning 200 after 12 Nov</b>. Migration is a request-shape change, not a model swap.",
+      src: "platform.example.com/docs/deprecations", verdict: "verified" },
+
+    { vendor: "anthropic", sev: "breaking", date: "2026-09-16",
+      title: "Tool result blocks now reject unknown top-level keys",
+      impact: "Handlers that pass extra metadata alongside a tool result <b>now fail validation</b> instead of ignoring the field silently.",
+      src: "docs.example.com/release-notes", verdict: "verified" },
+
+    { vendor: "cursor", sev: "removal", date: "2026-09-16",
+      title: "Custom rules file at the old path no longer read",
+      impact: "Projects keeping rules at the pre-migration location get <b>no warning and no rules</b>. The editor behaves as if the file is absent.",
+      src: "example.com/changelog", verdict: "claimed" },
+
+    { vendor: "google", sev: "limit", date: "2026-09-15",
+      title: "Free tier requests per minute reduced on the flash model",
+      impact: "Batch jobs tuned to the previous ceiling <b>begin returning 429</b> partway through a run.",
+      src: "ai.example.dev/rate-limits", verdict: "verified" },
+
+    { vendor: "vercel", sev: "limit", date: "2026-09-15",
+      title: "Edge function wall-clock ceiling lowered on hobby projects",
+      impact: "Long streaming responses <b>truncate mid-response</b> rather than erroring cleanly, so failures look like client bugs.",
+      src: "example.com/docs/limits", verdict: "claimed" },
+
+    { vendor: "supabase", sev: "breaking", date: "2026-09-14",
+      title: "Row level security enforced by default on new projects",
+      impact: "Fresh projects copying an older quickstart <b>read back zero rows</b> with no permission error shown.",
+      src: "example.com/blog/rls-default", verdict: "verified" },
+
+    { vendor: "anthropic", sev: "pricing", date: "2026-09-14",
+      title: "Long-context surcharge band shifted downward",
+      impact: "Prompts that previously sat under the band <b>now bill at the higher rate</b>. Cached prefixes are unaffected.",
+      src: "example.com/pricing", verdict: "unverified" },
+
+    { vendor: "github", sev: "breaking", date: "2026-09-13",
+      title: "Actions runner drops a deprecated Node version",
+      impact: "Workflows pinned to the old runtime <b>fail at the setup step</b> before any of your code runs.",
+      src: "example.blog/changelog", verdict: "verified" },
+
+    { vendor: "replit", sev: "pricing", date: "2026-09-13",
+      title: "Always-on instances move to usage-based billing",
+      impact: "A flat monthly line item <b>becomes variable</b>, so a quiet month costs less and a busy one costs more.",
+      src: "example.com/pricing-update", verdict: "claimed" },
+
+    { vendor: "openai", sev: "addition", date: "2026-09-12",
+      title: "Structured output now accepts recursive schemas",
+      impact: "Nested extraction schemas no longer need flattening before the call. Nothing existing breaks.",
+      src: "platform.example.com/docs/structured", verdict: "verified" },
+
+    { vendor: "anthropic", sev: "addition", date: "2026-09-12",
+      title: "Batch endpoint raises the per-job item ceiling",
+      impact: "Large evaluation runs fit in one submission instead of being chunked by hand.",
+      src: "docs.example.com/batch", verdict: "verified" },
+
+    { vendor: "google", sev: "addition", date: "2026-09-11",
+      title: "Context caching extended to an additional model tier",
+      impact: "Repeated long prefixes become cheaper on that tier. No change to existing calls.",
+      src: "ai.example.dev/caching", verdict: "claimed" }
+  ];
+
+  var KEY = "blast-radius-stack";
+  var selected = {};
+
+  function load() {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY)); } catch (e) { saved = null; }
+    STACK.forEach(function (s) {
+      selected[s.id] = saved && typeof saved[s.id] === "boolean" ? saved[s.id] : true;
+    });
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(selected)); } catch (e) { /* storage blocked */ }
+  }
+
+  function vendorLabel(id) {
+    for (var i = 0; i < STACK.length; i++) if (STACK[i].id === id) return STACK[i].label;
+    return id;
+  }
+
+  function buildStack() {
+    var ul = document.getElementById("stack");
+    ul.innerHTML = "";
+    STACK.forEach(function (s) {
+      var n = ITEMS.filter(function (it) { return it.vendor === s.id; }).length;
+      var li = document.createElement("li");
+      var id = "chk-" + s.id;
+      li.innerHTML = '<label for="' + id + '">' +
+        '<input type="checkbox" id="' + id + '" data-id="' + s.id + '"' + (selected[s.id] ? " checked" : "") + '>' +
+        '<span>' + s.label + '</span><span class="count">' + n + '</span></label>';
+      li.querySelector("input").addEventListener("change", function (e) {
+        selected[e.target.getAttribute("data-id")] = e.target.checked;
+        save(); render();
+      });
+      ul.appendChild(li);
+    });
+  }
+
+  function render() {
+    var live = ITEMS.filter(function (it) { return selected[it.vendor]; })
+                    .sort(function (a, b) {
+                      if (WEIGHT[a.sev] !== WEIGHT[b.sev]) return WEIGHT[a.sev] - WEIGHT[b.sev];
+                      return a.date < b.date ? 1 : -1;
+                    });
+
+    var breaking = live.filter(function (i) { return i.sev === "breaking" || i.sev === "removal"; }).length;
+    var cost = live.filter(function (i) { return i.sev === "limit" || i.sev === "pricing"; }).length;
+    var add = live.filter(function (i) { return i.sev === "addition"; }).length;
+    document.getElementById("n-breaking").textContent = breaking;
+    document.getElementById("n-cost").textContent = cost;
+    document.getElementById("n-add").textContent = add;
+
+    document.getElementById("counter").textContent =
+      live.length + " of " + ITEMS.length + " entries match your stack";
+
+    var feed = document.getElementById("feed");
+    feed.innerHTML = "";
+    if (!live.length) {
+      feed.innerHTML = '<div class="empty"><strong>Nothing shipped.</strong><br>' +
+        'No tracked change touches your selected stack. That is a correct result, not an empty page.</div>';
+      return;
+    }
+    live.forEach(function (it) {
+      var el = document.createElement("article");
+      el.className = "item";
+      el.setAttribute("data-sev", it.sev);
+      el.innerHTML =
+        '<div class="item-top">' +
+          '<span class="tag sev-' + it.sev + '">' + LABEL[it.sev] + '</span>' +
+          '<span class="tag vendor">' + vendorLabel(it.vendor) + '</span>' +
+          '<span class="tag sample">Sample</span>' +
+          '<time datetime="' + it.date + '">' + it.date + '</time>' +
+        '</div>' +
+        '<h3>' + it.title + '</h3>' +
+        '<p class="impact">' + it.impact + '</p>' +
+        '<div class="receipt">' +
+          '<span class="src">' + it.src + '</span>' +
+          '<span>read ' + it.date + '</span>' +
+          '<span class="verdict v-' + it.verdict + '">' + it.verdict.toUpperCase() + '</span>' +
+        '</div>';
+      feed.appendChild(el);
+    });
+  }
+
+  document.getElementById("all").addEventListener("click", function () {
+    STACK.forEach(function (s) { selected[s.id] = true; });
+    save(); buildStack(); render();
+  });
+  document.getElementById("none").addEventListener("click", function () {
+    STACK.forEach(function (s) { selected[s.id] = false; });
+    save(); buildStack(); render();
+  });
+
+  load(); buildStack(); render();
+</script>
