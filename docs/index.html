@@ -4,295 +4,272 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckCheck</title>
-<meta name="description" content="Drop a PowerPoint in and see every slide x-rayed: which words are real text and which are pixels. Runs entirely in your browser, nothing is uploaded.">
+<meta name="description" content="X-ray a PowerPoint. See which slides are real text and which are just pictures, before your client does. Runs entirely in your browser, nothing is uploaded.">
 <meta property="og:title" content="DeckCheck">
 <meta property="og:description" content="X-ray a PowerPoint. See which slides are real and which are just pictures, before your client does.">
 <meta property="og:type" content="website">
+<meta name="theme-color" content="#08090B">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#129659;</text></svg>">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
+  /* Committed to one visual world: a dark instrument. Every colour is painted
+     explicitly so the page holds on any host background. */
   :root {
-    --bg: #F2F3F1;
-    --panel: #FFFFFF;
-    --sunk: #E9EBE8;
-    --ink: #101215;
-    --body: #3E434A;
-    --dim: #767C85;
-    --line: #DEE1DD;
-    --edge: #C6CAC5;
+    --void: #08090B;
+    --raise: #101316;
+    --lift: #171B1F;
+    --hair: #21262B;
+    --edge: #2E353C;
 
-    --live: #0F7A4F;
-    --live-bg: #E2F1E9;
-    --thin: #97650A;
-    --thin-bg: #FBF0D9;
-    --dead: #BE2B1D;
-    --dead-bg: #FBE7E4;
-    --beam: #1C6FE0;
+    --text: #F4F5F7;
+    --mute: #969DA7;
+    --dim: #626A74;
 
-    --r: 14px;
-    --lift: 0 1px 2px rgba(16,18,21,.05), 0 8px 24px -12px rgba(16,18,21,.18);
-    --gutter: 18px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #0C0E10; --panel: #15181B; --sunk: #1D2125; --ink: #ECEEF0;
-      --body: #AEB4BC; --dim: #737A84; --line: #262B30; --edge: #39404733;
-      --live: #57C594; --live-bg: #102620; --thin: #DCB05F; --thin-bg: #262014;
-      --dead: #F0837A; --dead-bg: #2B1715; --beam: #5C9BFF;
-      --lift: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px -14px rgba(0,0,0,.8);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #0C0E10; --panel: #15181B; --sunk: #1D2125; --ink: #ECEEF0;
-    --body: #AEB4BC; --dim: #737A84; --line: #262B30; --edge: #394047;
-    --live: #57C594; --live-bg: #102620; --thin: #DCB05F; --thin-bg: #262014;
-    --dead: #F0837A; --dead-bg: #2B1715; --beam: #5C9BFF;
-    --lift: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px -14px rgba(0,0,0,.8);
+    --live: #46C08A;
+    --thin: #D9A64A;
+    --dead: #FF6F60;
+    --beam: #6E9BF5;
+
+    --gut: 20px;
   }
 
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  html { color-scheme: light dark; }
+  html { color-scheme: dark; }
   body {
-    margin: 0; background: var(--bg); color: var(--ink);
+    margin: 0; background: var(--void); color: var(--text);
     font-family: Archivo, ui-sans-serif, system-ui, sans-serif;
-    font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+    font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(70ch 40ch at 50% -12ch, rgba(110,155,245,.10), transparent 70%);
+    background-repeat: no-repeat;
   }
-  .wrap { max-width: 1000px; margin: 0 auto; padding-inline: var(--gutter); }
-  button { font: inherit; color: inherit; }
+  button { font: inherit; color: inherit; background: none; border: 0; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding-inline: var(--gut); }
 
-  /* ---------- masthead ---------- */
-  header { padding-block: 40px 0; }
+  /* ---------- hero ---------- */
+  header { padding-block: clamp(56px, 11vw, 104px) 0; text-align: center; }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px;
+    letter-spacing: .22em; text-transform: uppercase; color: var(--dim);
+    margin: 0 0 22px;
+  }
   .mark {
     font-family: "Instrument Serif", Georgia, serif; font-weight: 400;
-    font-size: clamp(46px, 9vw, 76px); letter-spacing: -.015em; line-height: .95;
-    margin: 0; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    font-size: clamp(50px, 11vw, 104px); line-height: .92; letter-spacing: -.035em;
+    margin: 0; text-wrap: balance;
   }
   .mark i { font-style: italic; color: var(--dim); }
-  .lede { font-size: 17px; color: var(--body); max-width: 56ch; margin: 14px 0 0; }
-  .lede b { color: var(--ink); font-weight: 600; }
+  .lede {
+    font-size: 16px; color: var(--mute); max-width: 46ch; margin: 22px auto 0;
+    text-wrap: balance;
+  }
 
   /* ---------- the one action ---------- */
-  .stage { margin-top: 26px; }
+  .stage { margin-top: 40px; }
   .drop {
-    position: relative; width: 100%; display: block; text-align: left; cursor: pointer;
-    background: var(--panel); border: 1.5px dashed var(--edge); border-radius: var(--r);
-    padding: 26px 26px; overflow: hidden; transition: border-color .15s, transform .15s;
+    position: relative; width: 100%; display: block; cursor: pointer; overflow: hidden;
+    background:
+      radial-gradient(60ch 24ch at 50% 130%, rgba(110,155,245,.16), transparent 70%),
+      var(--raise);
+    border: 1px solid var(--hair); border-radius: 20px; padding: 42px 26px;
+    text-align: center; transition: border-color .18s, background-color .18s;
   }
-  .drop:hover, .drop.hot { border-color: var(--beam); }
-  .drop.hot { border-style: solid; transform: translateY(-1px); }
-  .drop-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .drop:hover, .drop.hot { border-color: var(--edge); }
+  .drop.hot { background-color: var(--lift); }
   .lens {
-    width: 58px; height: 58px; flex: none; border-radius: 50%;
-    border: 1.5px solid var(--edge); display: grid; place-items: center; position: relative;
+    width: 46px; height: 46px; margin: 0 auto 18px; border-radius: 50%;
+    border: 1px solid var(--edge); display: grid; place-items: center; position: relative;
   }
   .lens::before {
-    content: ""; width: 26px; height: 26px; border-radius: 50%;
-    border: 1.5px solid var(--beam);
+    content: ""; width: 16px; height: 16px; border-radius: 50%; background: var(--beam);
+    opacity: .85;
   }
   .lens::after {
-    content: ""; position: absolute; inset: -1.5px; border-radius: 50%;
-    border: 1.5px solid transparent; border-top-color: var(--beam); opacity: 0;
+    content: ""; position: absolute; inset: -1px; border-radius: 50%;
+    border: 1px solid transparent; border-top-color: var(--beam); opacity: 0;
   }
-  .drop.busy .lens::after { opacity: 1; animation: spin 1s linear infinite; }
+  .drop.busy .lens::after { opacity: 1; animation: spin .9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .drop h2 { margin: 0 0 2px; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
-  .drop p { margin: 0; color: var(--dim); font-size: 14px; }
+  .drop h2 { margin: 0 0 4px; font-size: 20px; font-weight: 500; letter-spacing: -.015em; }
+  .drop p { margin: 0; color: var(--dim); font-size: 13.5px; }
   .sworn {
-    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line);
-    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11.5px;
-    color: var(--live); display: flex; gap: 8px; align-items: center;
+    margin-top: 22px; font-family: "JetBrains Mono", monospace; font-size: 11px;
+    color: var(--live); display: inline-flex; gap: 8px; align-items: center;
+    letter-spacing: .02em;
   }
-  .sworn::before {
-    content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--live); flex: none;
-  }
+  .sworn::before { content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--live); box-shadow: 0 0 8px var(--live); }
   .beam {
-    position: absolute; left: 0; right: 0; height: 2px; background: var(--beam);
-    opacity: 0; top: 0; box-shadow: 0 0 18px 2px var(--beam);
+    position: absolute; left: 0; right: 0; height: 1px; top: 0; opacity: 0;
+    background: linear-gradient(90deg, transparent, var(--beam), transparent);
+    box-shadow: 0 0 22px 3px rgba(110,155,245,.5);
   }
-  .drop.busy .beam { opacity: .85; animation: sweep 1.1s ease-in-out infinite; }
-  @keyframes sweep { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+  .drop.busy .beam { opacity: 1; animation: sweep 1.15s ease-in-out infinite; }
+  @keyframes sweep { 0%,100% { top: 0; } 50% { top: 100%; } }
   @media (prefers-reduced-motion: reduce) {
     .drop.busy .beam, .drop.busy .lens::after { animation: none; }
   }
   input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .flash { margin-top: 14px; padding: 13px 16px; border-radius: 12px; font-size: 13.5px;
+    background: rgba(255,111,96,.09); color: var(--dead); }
 
-  .flash {
-    margin-top: 12px; padding: 13px 16px; border-radius: 10px; font-size: 14px;
-    background: var(--dead-bg); color: var(--dead);
+  /* ---------- queue ---------- */
+  .kicker {
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--dim);
   }
-
-  /* ---------- queue when several files ---------- */
-  .queue { margin-top: 20px; display: flex; flex-direction: column; gap: 6px; }
-  .qhead {
-    font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .1em;
-    text-transform: uppercase; color: var(--dim); margin-bottom: 4px;
-  }
+  .queue { margin-top: 44px; }
+  .queue .kicker { margin-bottom: 12px; display: block; }
   .qrow {
-    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-    padding: 11px 15px; cursor: pointer; transition: border-color .12s;
+    display: flex; align-items: center; gap: 16px; width: 100%; text-align: left;
+    padding: 13px 4px; cursor: pointer; border-bottom: 1px solid var(--hair);
+    transition: padding-left .15s;
   }
-  .qrow:hover { border-color: var(--edge); }
-  .qrow[aria-current="true"] { border-color: var(--beam); }
-  .qscore {
-    font-family: "JetBrains Mono", monospace; font-weight: 500; font-size: 17px;
-    font-variant-numeric: tabular-nums; width: 40px; flex: none;
-  }
+  .qrow:hover { padding-left: 10px; }
+  .qrow[aria-current="true"] { padding-left: 10px; }
+  .qrow[aria-current="true"] .qname { color: var(--text); }
+  .qscore { font-family: "JetBrains Mono", monospace; font-size: 18px; width: 38px;
+    flex: none; font-variant-numeric: tabular-nums; }
   .qname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
-    white-space: nowrap; font-size: 14px; }
-  .qmeta { font-size: 12.5px; color: var(--dim); font-family: "JetBrains Mono", monospace;
+    white-space: nowrap; font-size: 14px; color: var(--mute); }
+  .qmeta { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--dim);
     white-space: nowrap; }
 
-  /* ---------- the verdict ---------- */
-  .report { margin-top: 24px; }
-  .verdict {
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--r);
-    box-shadow: var(--lift); overflow: hidden;
+  /* ---------- verdict ---------- */
+  .report { margin-top: 52px; }
+  .vtop {
+    display: flex; gap: 34px; align-items: center; flex-wrap: wrap;
+    padding-bottom: 38px; position: relative;
   }
-  .vtop { display: flex; gap: 26px; padding: 24px 26px; align-items: center; flex-wrap: wrap; }
-  .dial { position: relative; width: 116px; height: 116px; flex: none; }
+  .glow {
+    position: absolute; left: -40px; top: 50%; width: 320px; height: 320px;
+    transform: translateY(-50%); border-radius: 50%; filter: blur(70px);
+    opacity: .2; pointer-events: none;
+  }
+  .dial { position: relative; width: 132px; height: 132px; flex: none; }
   .dial svg { display: block; transform: rotate(-90deg); }
   .dial b {
     position: absolute; inset: 0; display: grid; place-items: center;
-    font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 44px;
-    font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+    font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 50px;
+    font-variant-numeric: tabular-nums; letter-spacing: -.03em;
   }
-  .vsay { flex: 1 1 280px; min-width: 0; }
-  .vfile {
-    font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--dim);
-    word-break: break-all; margin-bottom: 7px;
-  }
+  .vsay { flex: 1 1 300px; min-width: 0; position: relative; }
+  .vfile { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--dim);
+    word-break: break-all; margin-bottom: 10px; }
   .vsay h3 {
-    font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: 27px;
-    line-height: 1.2; margin: 0 0 8px; letter-spacing: -.01em; text-wrap: balance;
+    font-family: "Instrument Serif", Georgia, serif; font-weight: 400;
+    font-size: clamp(27px, 4.4vw, 38px); line-height: 1.1; letter-spacing: -.025em;
+    margin: 0 0 12px; text-wrap: balance;
   }
-  .vdo { margin: 0; font-size: 14.5px; color: var(--body); }
-  .vdo b { color: var(--ink); font-weight: 600; }
+  .vdo { margin: 0; font-size: 14.5px; color: var(--mute); max-width: 54ch; }
+  .vdo b { color: var(--text); font-weight: 500; }
 
-  /* ---------- filmstrip: the point of the page ---------- */
-  .strip-head {
-    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-    padding: 0 26px 10px; border-top: 1px solid var(--line); padding-top: 18px;
-  }
-  .strip-head h4 { margin: 0; font-size: 14px; font-weight: 600; }
-  .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-left: auto;
-    font-size: 11.5px; color: var(--dim); font-family: "JetBrains Mono", monospace; }
-  .legend span { display: flex; align-items: center; gap: 5px; }
-  .dotk { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+  /* ---------- filmstrip ---------- */
+  .strip-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding-top: 26px; border-top: 1px solid var(--hair); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-left: auto;
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--dim); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .dotk { width: 7px; height: 7px; border-radius: 2px; flex: none; }
 
-  .strip {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-    gap: 10px; padding: 0 26px 24px;
-  }
+  .strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 9px; margin-top: 18px; }
   .tile {
     all: unset; cursor: pointer; position: relative; aspect-ratio: 16 / 9;
-    background: var(--sunk); border: 1px solid var(--line); border-radius: 7px;
-    padding: 8px; display: flex; flex-direction: column; gap: 3px; overflow: hidden;
-    transition: border-color .12s, transform .12s;
+    background: var(--raise); border: 1px solid var(--hair); border-radius: 8px;
+    padding: 9px; display: flex; flex-direction: column; gap: 4px; overflow: hidden;
+    transition: transform .14s, border-color .14s, box-shadow .14s;
   }
-  .tile:hover { transform: translateY(-2px); border-color: var(--edge); }
+  .tile:hover { transform: translateY(-3px); border-color: var(--edge); }
   .tile[aria-pressed="true"] { border-color: var(--beam); box-shadow: 0 0 0 1px var(--beam); }
-  .tile.dead { background: var(--dead-bg); border-color: transparent; }
-  .tile.thin { background: var(--thin-bg); border-color: transparent; }
-  .tile .no {
-    position: absolute; right: 5px; bottom: 3px; font-family: "JetBrains Mono", monospace;
-    font-size: 9.5px; color: var(--dim);
-  }
-  .bar { height: 3px; border-radius: 2px; background: var(--live); opacity: .75; }
-  .bar.h { height: 5px; opacity: 1; }
+  .tile.dead { border-color: rgba(255,111,96,.34); background: rgba(255,111,96,.07); }
+  .tile.dead:hover { box-shadow: 0 6px 22px -8px rgba(255,111,96,.5); }
+  .tile.thin { border-color: rgba(217,166,74,.28); }
+  .tile .no { position: absolute; right: 7px; bottom: 5px;
+    font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--dim); }
+  .bar { height: 3px; border-radius: 3px; background: var(--live); opacity: .6; }
+  .bar.h { height: 5px; opacity: .95; }
   .tile.thin .bar { background: var(--thin); }
-  .pic {
-    flex: 1; border-radius: 3px; min-height: 10px;
-    background: repeating-linear-gradient(45deg, var(--dead) 0 2px, transparent 2px 6px);
-    opacity: .5;
-  }
-  .obj {
-    font-family: "JetBrains Mono", monospace; font-size: 8px; letter-spacing: .06em;
+  .row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: auto; }
+  .obj { font-family: "JetBrains Mono", monospace; font-size: 8px; letter-spacing: .07em;
     color: var(--live); border: 1px solid currentColor; border-radius: 3px;
-    padding: 1px 3px; line-height: 1.4;
-  }
+    padding: 1px 4px; line-height: 1.5; opacity: .8; }
   .tile.thin .obj { color: var(--thin); }
-  .row { display: flex; gap: 3px; flex-wrap: wrap; margin-top: auto; }
-  .deadmark {
-    position: absolute; inset: 0; display: grid; place-items: center;
-    font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .08em;
-    color: var(--dead); font-weight: 500;
-  }
+  .pic { flex: 1; border-radius: 4px; min-height: 12px;
+    background: repeating-linear-gradient(45deg, rgba(255,111,96,.5) 0 1.5px, transparent 1.5px 6px); }
+  .deadmark { position: absolute; inset: 0; display: grid; place-items: center;
+    font-family: "JetBrains Mono", monospace; font-size: 9.5px; letter-spacing: .12em;
+    color: var(--dead); }
 
-  /* ---------- detail for one slide ---------- */
-  .detail {
-    margin: 0 26px 24px; background: var(--sunk); border-radius: 10px; padding: 15px 18px;
-    font-size: 14px;
-  }
-  .detail h5 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
-  .detail p { margin: 0; color: var(--body); }
-  .detail .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px;
-    font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--dim); }
-  .detail .tags i { font-style: normal; background: var(--panel); border-radius: 4px; padding: 2px 7px; }
+  .detail { margin-top: 14px; padding: 16px 18px; border-radius: 12px;
+    background: var(--raise); border: 1px solid var(--hair); font-size: 14px; }
+  .detail h5 { margin: 0 0 6px; font-size: 13px; font-weight: 500;
+    font-family: "JetBrains Mono", monospace; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--dim); }
+  .detail p { margin: 0; color: var(--mute); max-width: 68ch; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px;
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--dim); }
+  .tags i { font-style: normal; border: 1px solid var(--hair); border-radius: 5px;
+    padding: 2px 8px; }
 
   /* ---------- numbers ---------- */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
-    border-top: 1px solid var(--line); }
-  .cell { padding: 13px 16px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .cell .v { font-family: "JetBrains Mono", monospace; font-size: 20px; font-weight: 500;
-    font-variant-numeric: tabular-nums; line-height: 1.2; }
-  .cell .k { font-size: 11.5px; color: var(--dim); margin-top: 3px; line-height: 1.35; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    margin-top: 44px; border-top: 1px solid var(--hair); }
+  .cell { padding: 18px 16px 18px 0; }
+  .cell .v { font-family: "JetBrains Mono", monospace; font-size: 22px; font-weight: 400;
+    font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .cell .k { font-size: 11.5px; color: var(--dim); margin-top: 5px; line-height: 1.4; }
   .cell.warn .v { color: var(--dead); }
 
-  .notes { padding: 18px 26px 6px; display: flex; flex-direction: column; gap: 10px; }
-  .note { border-left: 2px solid var(--edge); padding-left: 13px; font-size: 14px; color: var(--body); }
-  .note b { color: var(--ink); font-weight: 600; display: block; margin-bottom: 2px; }
-  .note.bad { border-left-color: var(--dead); }
-  .note.warn { border-left-color: var(--thin); }
-  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-  .chip { font-family: "JetBrains Mono", monospace; font-size: 11px; padding: 2px 7px;
-    border-radius: 4px; background: var(--sunk); }
+  .notes { margin-top: 26px; display: flex; flex-direction: column; gap: 18px; }
+  .note { font-size: 14px; color: var(--mute); max-width: 68ch; }
+  .note b { display: block; color: var(--text); font-weight: 500; margin-bottom: 3px;
+    font-size: 14.5px; }
+  .note.bad b { color: var(--dead); }
+  .note.warn b { color: var(--thin); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { font-family: "JetBrains Mono", monospace; font-size: 10.5px; padding: 3px 9px;
+    border-radius: 6px; border: 1px solid var(--hair); color: var(--mute); }
 
-  .acts { display: flex; gap: 10px; padding: 16px 26px 22px; flex-wrap: wrap; }
-  .act {
-    border: 1px solid var(--edge); background: var(--panel); border-radius: 9px;
-    padding: 9px 15px; font-size: 14px; font-weight: 500; cursor: pointer;
-    transition: border-color .12s, background .12s;
-  }
+  .acts { display: flex; gap: 10px; margin-top: 34px; flex-wrap: wrap; }
+  .act { border: 1px solid var(--edge); border-radius: 10px; padding: 10px 18px;
+    font-size: 14px; cursor: pointer; transition: border-color .15s, background .15s; }
   .act:hover { border-color: var(--beam); }
-  .act.key { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-  .act.key:hover { opacity: .9; }
+  .act.key { background: var(--text); color: var(--void); border-color: var(--text); }
+  .act.key:hover { opacity: .88; }
 
   /* ---------- footer ---------- */
-  .limits { margin: 34px 0 52px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .limits { margin: 84px 0 70px; padding-top: 34px; border-top: 1px solid var(--hair); }
   .limits h4 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400;
-    font-size: 22px; margin: 0 0 12px; }
-  .limits ul { margin: 0; padding-left: 18px; color: var(--body); font-size: 14.5px; }
-  .limits li { margin-bottom: 8px; }
-  .limits a { color: inherit; }
-  .fine { margin-top: 16px; font-size: 13px; color: var(--dim); }
+    font-size: 26px; letter-spacing: -.02em; margin: 0 0 20px; }
+  .limits ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+  .limits li { color: var(--mute); font-size: 13.5px; max-width: 44ch; }
+  .limits li b { color: var(--text); font-weight: 500; }
+  .limits a { color: var(--mute); }
+  .fine { margin-top: 30px; font-size: 12.5px; color: var(--dim); }
 
-  :focus-visible { outline: 2px solid var(--beam); outline-offset: 3px; border-radius: 5px; }
+  :focus-visible { outline: 1px solid var(--beam); outline-offset: 3px; border-radius: 6px; }
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <header>
-    <h1 class="mark">DeckCheck <i>x-ray</i></h1>
-    <p class="lede">AI slide tools make a good draft, then export a PowerPoint where the
-      words are pixels. Text boxes shift, fonts substitute, charts stop being charts.
-      <b>You usually find out in front of the client.</b> Drop a deck in and see every
-      slide for what it really is.</p>
+    <p class="eyebrow">Nothing leaves your browser</p>
+    <h1 class="mark">Your deck is not<br><i>what you think it is</i></h1>
+    <p class="lede">AI slide tools export PowerPoints where the words are pixels.
+      You usually find out in front of the client. Find out here instead.</p>
   </header>
 
   <div class="stage">
     <button class="drop" id="drop" type="button">
       <span class="beam" aria-hidden="true"></span>
-      <span class="drop-row">
-        <span class="lens" aria-hidden="true"></span>
-        <span>
-          <h2 id="dropTitle">Drop a .pptx here</h2>
-          <p id="dropHint">or click to choose files. Several at once is fine.</p>
-        </span>
-      </span>
-      <span class="sworn">Runs in your browser. The file is never uploaded.</span>
+      <span class="lens" aria-hidden="true"></span>
+      <h2 id="dropTitle">Drop a .pptx</h2>
+      <p id="dropHint">or click to choose. Several at once is fine.</p>
+      <span class="sworn">read locally, never uploaded</span>
     </button>
     <input type="file" id="file" multiple
            accept=".pptx,.potx,application/vnd.openxmlformats-officedocument.presentationml.presentation">
@@ -303,23 +280,21 @@
   <div id="report" class="report"></div>
 
   <section class="limits">
-    <h4>What it checks, and what it cannot</h4>
+    <h4>What it sees, and what it cannot</h4>
     <ul>
       <li><b>A slide is dead</b> when one picture covers 82% of it and under 25 live
-        characters remain. Those words are pixels, and there is no repair short of
-        retyping them.</li>
-      <li><b>It cannot see a picture that ought to be a chart.</b> It reports pictures and
+        characters remain. Those words are pixels.</li>
+      <li><b>It cannot spot a picture that ought to be a chart.</b> It reports pictures and
         no live charts. Whether that matters is your call.</li>
-      <li><b>A deliberate text-free cover slide gets flagged.</b> Read the strip, not just
-        the number.</li>
-      <li><b>Font risk is judged against the faces that ship with Office.</b> A font your
-        whole team installed still gets flagged. Embedded fonts clear it.</li>
+      <li><b>A deliberate text-free cover gets flagged.</b> Read the strip, not the number.</li>
+      <li><b>Font risk is judged against the faces that ship with Office.</b> One your whole
+        team installed still gets flagged. Embedded fonts clear it.</li>
       <li><b>The score is a summary. The strip is the evidence</b>, and the evidence is the
         part worth arguing with.</li>
     </ul>
     <p class="fine">Same logic as the command line version in
-      <a href="https://github.com/theajitnayak/product-lab">theajitnayak/product-lab</a>, MIT
-      licensed. Nothing is uploaded, stored or logged.</p>
+      <a href="https://github.com/theajitnayak/product-lab">theajitnayak/product-lab</a>,
+      MIT licensed. A .pptx is a zip of XML, so the whole audit runs in this page.</p>
   </section>
 </div>
 
@@ -345,7 +320,7 @@
     if (s >= 85) return "Native. Edit it like any other deck.";
     if (s >= 60) return "Mostly editable. Expect repair before it ships.";
     if (s >= 30) return "Heavy repair. Budget real time before the meeting.";
-    return "This is a picture of a presentation, not a presentation.";
+    return "A picture of a presentation, not a presentation.";
   }
   function toneFor(s) { return s >= 85 ? "live" : s >= 60 ? "thin" : "dead"; }
 
@@ -357,8 +332,8 @@
     }
     if (r.fontsAtRisk.length) {
       return "<b>Nothing is dead, but " + r.fontsAtRisk.length + " font" +
-        (r.fontsAtRisk.length === 1 ? "" : "s") + " will substitute.</b> Line breaks will " +
-        "move on whoever opens it. Swap them or embed them.";
+        (r.fontsAtRisk.length === 1 ? "" : "s") + " will substitute.</b> Line breaks move " +
+        "on whoever opens it. Swap them or embed them.";
     }
     if (r.pictures && !r.charts) {
       return "<b>Nothing is dead.</b> Check whether any of those pictures used to be a " +
@@ -479,19 +454,44 @@
     });
   }
 
+  /* A real audit, so the page shows what it does before anyone trusts it with a file. */
+  function sampleReport() {
+    var shape = [
+      [64, 48], [220, 180, 140], [310, 90], [0], [0],
+      [180, 260, 210], [95], [0], [140, 120, 300], [70, 55], [420], [88]
+    ];
+    var per = shape.map(function (runs, i) {
+      var live = runs.filter(function (x) { return x > 0; });
+      var s = { n: i + 1, runs: live, boxes: live.length, pics: 0, bleed: 0,
+                charts: 0, tables: 0, flat: false,
+                chars: runs.reduce(function (a, b) { return a + b; }, 0) };
+      if (i === 3 || i === 4 || i === 7) {
+        s.flat = true; s.pics = 1; s.bleed = 1; s.chars = 0; s.boxes = 0; s.runs = [];
+      }
+      if (i === 5) s.charts = 1;
+      if (i === 10) s.tables = 1;
+      if (i === 2) s.pics = 2;
+      s.state = s.flat ? "dead" : (s.chars < THIN_FLOOR ? "thin" : "live");
+      return s;
+    });
+    function sum(k) { return per.reduce(function (t, s) { return t + s[k]; }, 0); }
+    return { file: "board-deck-q3.pptx", slides: per.length, score: 66,
+             flattened: [4, 5, 8], chars: sum("chars"), boxes: sum("boxes"),
+             pictures: sum("pics"), charts: 1, tables: 1,
+             fontsUsed: ["Calibri", "Poppins"], fontsAtRisk: ["Poppins"],
+             embedded: false, per: per, sample: true };
+  }
+
   function tileInner(s) {
     if (s.flat) {
       return '<span class="pic"></span><span class="deadmark">PIXELS</span>' +
              '<span class="no">' + s.n + '</span>';
     }
     var parts = [];
-    var runs = s.runs.slice(0, 5);
-    runs.forEach(function (len, i) {
-      var pct = Math.max(22, Math.min(100, Math.round(Math.sqrt(len) * 9)));
+    s.runs.slice(0, 5).forEach(function (len, i) {
+      var pct = Math.max(24, Math.min(100, Math.round(Math.sqrt(len) * 9)));
       parts.push('<span class="bar' + (i === 0 ? " h" : "") + '" style="width:' + pct + '%"></span>');
     });
-    // Badges, not hatching. The hatch means "this whole slide is a picture", so
-    // using it for an ordinary illustration made healthy slides look alarming.
     var badges = [];
     if (s.charts) badges.push("CHART");
     if (s.tables) badges.push("TABLE");
@@ -505,26 +505,20 @@
   }
 
   function detailFor(s) {
-    var tags = [];
-    tags.push(s.chars + " characters");
-    tags.push(s.boxes + " text box" + (s.boxes === 1 ? "" : "es"));
+    var tags = [s.chars + " characters", s.boxes + " text box" + (s.boxes === 1 ? "" : "es")];
     if (s.pics) tags.push(s.pics + " picture" + (s.pics === 1 ? "" : "s"));
     if (s.charts) tags.push(s.charts + " live chart" + (s.charts === 1 ? "" : "s"));
     if (s.tables) tags.push(s.tables + " live table" + (s.tables === 1 ? "" : "s"));
-
-    var says;
-    if (s.flat) {
-      says = "One picture covers this whole slide and there is no live text on it. " +
-             "Its words are pixels. To change anything here you rebuild the slide.";
-    } else if (s.state === "thin") {
-      says = "Editable, but there is very little text on it. That is normal for a cover " +
-             "or a divider, and worth a look if it was meant to carry content.";
-    } else {
-      says = "Every word on this slide is in a real text box. Click it in PowerPoint and type.";
-    }
+    var says = s.flat
+      ? "One picture covers this whole slide and there is no live text on it. Its words are " +
+        "pixels. To change anything here you rebuild the slide."
+      : s.state === "thin"
+      ? "Editable, but there is very little text on it. Normal for a cover or a divider, " +
+        "worth a look if it was meant to carry content."
+      : "Every word on this slide is in a real text box. Click it in PowerPoint and type.";
     return '<div class="detail"><h5>Slide ' + s.n + '</h5><p>' + says + '</p>' +
-           '<div class="tags">' + tags.map(function (t) { return "<i>" + esc(t) + "</i>"; }).join("") +
-           '</div></div>';
+           '<div class="tags">' + tags.map(function (t) {
+             return "<i>" + esc(t) + "</i>"; }).join("") + '</div></div>';
   }
 
   function summaryText(r) {
@@ -538,38 +532,6 @@
       "\nChecked with " + location.href;
   }
 
-  /* A real audit of a real deck, kept so the page shows what it does before
-     anyone has to trust it with a file. Replaced the moment one is dropped. */
-  function sampleReport() {
-    var shape = [
-      [64, 48], [220, 180, 140], [310, 90], [0], [0],
-      [180, 260, 210], [95], [0], [140, 120, 300], [70, 55], [420], [88]
-    ];
-    var per = shape.map(function (runs, i) {
-      var chars = runs.reduce(function (a, b) { return a + b; }, 0);
-      var s = {
-        n: i + 1, runs: runs.filter(function (x) { return x > 0; }),
-        chars: chars, boxes: runs.filter(function (x) { return x > 0; }).length,
-        pics: 0, bleed: 0, charts: 0, tables: 0, flat: false
-      };
-      if (i === 3 || i === 4 || i === 7) { s.flat = true; s.pics = 1; s.bleed = 1; s.chars = 0;
-        s.boxes = 0; s.runs = []; }
-      if (i === 5) s.charts = 1;
-      if (i === 10) s.tables = 1;
-      if (i === 2) s.pics = 2;
-      s.state = s.flat ? "dead" : (s.chars < THIN_FLOOR ? "thin" : "live");
-      return s;
-    });
-    function sum(k) { return per.reduce(function (t, s) { return t + s[k]; }, 0); }
-    return {
-      file: "board-deck-q3.pptx", slides: per.length, score: 66,
-      flattened: [4, 5, 8], chars: sum("chars"), boxes: sum("boxes"),
-      pictures: sum("pics"), charts: 1, tables: 1,
-      fontsUsed: ["Calibri", "Poppins"], fontsAtRisk: ["Poppins"],
-      embedded: false, per: per, sample: true
-    };
-  }
-
   var current = null, picked = null;
 
   function draw(r, keepPick) {
@@ -577,24 +539,24 @@
     if (!keepPick) picked = null;
     var tone = toneFor(r.score);
     var colour = "var(--" + tone + ")";
-    var C = 2 * Math.PI * 50, dash = (r.score / 100) * C;
+    var C = 2 * Math.PI * 58, dash = (r.score / 100) * C;
 
     var html = "";
-    if (r.sample) {
-      html += '<div class="qhead" style="margin-bottom:8px">Sample result. ' +
-              'Drop your own deck to replace it.</div>';
-    }
-    html += '<div class="verdict"><div class="vtop">' +
-      '<div class="dial"><svg width="116" height="116" viewBox="0 0 116 116" aria-hidden="true">' +
-      '<circle cx="58" cy="58" r="50" fill="none" stroke="var(--line)" stroke-width="9"></circle>' +
-      '<circle cx="58" cy="58" r="50" fill="none" stroke="' + colour + '" stroke-width="9" ' +
+    if (r.sample) html += '<span class="kicker" style="display:block;margin-bottom:22px">' +
+      'Sample result &mdash; drop your own deck to replace it</span>';
+
+    html += '<div class="vtop"><div class="glow" style="background:' + colour + '"></div>' +
+      '<div class="dial"><svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true">' +
+      '<circle cx="66" cy="66" r="58" fill="none" stroke="var(--hair)" stroke-width="6"></circle>' +
+      '<circle cx="66" cy="66" r="58" fill="none" stroke="' + colour + '" stroke-width="6" ' +
       'stroke-linecap="round" stroke-dasharray="' + dash.toFixed(1) + ' ' + C.toFixed(1) + '"></circle>' +
       '</svg><b style="color:' + colour + '">' + r.score + '</b></div>' +
       '<div class="vsay"><div class="vfile">' + esc(r.file) + '</div>' +
       '<h3>' + verdictFor(r.score) + '</h3>' +
       '<p class="vdo">' + adviceFor(r) + '</p></div></div>';
 
-    html += '<div class="strip-head"><h4>Every slide, x-rayed</h4><div class="legend">' +
+    html += '<div class="strip-head"><span class="kicker">Every slide, x-rayed</span>' +
+      '<div class="legend">' +
       '<span><i class="dotk" style="background:var(--live)"></i>editable</span>' +
       '<span><i class="dotk" style="background:var(--thin)"></i>little text</span>' +
       '<span><i class="dotk" style="background:var(--dead)"></i>pixels</span>' +
@@ -633,8 +595,8 @@
         '<div class="chips">' + r.fontsAtRisk.map(function (f) {
           return '<span class="chip">' + esc(f) + "</span>"; }).join("") + '</div></div>');
     } else if (r.embedded) {
-      notes.push('<div class="note"><b>Fonts are embedded</b>They travel with the file, ' +
-        'so it renders as authored anywhere.</div>');
+      notes.push('<div class="note"><b>Fonts are embedded</b>They travel with the file, so it ' +
+        'renders as authored anywhere.</div>');
     }
     if (r.pictures && !r.charts) {
       notes.push('<div class="note warn"><b>No live charts</b>' + r.pictures + ' picture' +
@@ -645,7 +607,7 @@
 
     html += '<div class="acts">' +
       '<button class="act key" type="button" id="again">Check another deck</button>' +
-      '<button class="act" type="button" id="copy">Copy summary</button></div></div>';
+      '<button class="act" type="button" id="copy">Copy summary</button></div>';
 
     document.getElementById("report").innerHTML = html;
 
@@ -656,16 +618,17 @@
       picked = (picked === n) ? null : n;
       draw(current, true);
     });
-    document.getElementById("again").addEventListener("click", function () {
-      fileEl.click();
-    });
+    document.getElementById("again").addEventListener("click", function () { fileEl.click(); });
     document.getElementById("copy").addEventListener("click", function (e) {
       var button = e.currentTarget;
-      var done = function () { button.textContent = "Copied";
-        setTimeout(function () { button.textContent = "Copy summary"; }, 1600); };
+      var done = function () {
+        button.textContent = "Copied";
+        setTimeout(function () { button.textContent = "Copy summary"; }, 1600);
+      };
       try {
         navigator.clipboard.writeText(summaryText(current)).then(done, function () {
-          button.textContent = "Press Ctrl+C"; });
+          button.textContent = "Press Ctrl+C";
+        });
       } catch (err) { button.textContent = "Copy not available"; }
     });
   }
@@ -674,12 +637,12 @@
     var q = document.getElementById("queue");
     if (all.length < 2) { q.hidden = true; q.innerHTML = ""; return; }
     q.hidden = false;
-    var html = '<div class="qhead">' + all.length + " decks, worst first</div>";
+    var html = '<span class="kicker">' + all.length + " decks &middot; worst first</span>";
     all.forEach(function (r, i) {
       html += '<button class="qrow" type="button" data-i="' + i + '" aria-current="' +
         (i === activeIndex) + '"><span class="qscore" style="color:var(--' +
         toneFor(r.score) + ')">' + r.score + '</span><span class="qname">' + esc(r.file) +
-        '</span><span class="qmeta">' + r.slides + " slides, " + r.flattened.length +
+        '</span><span class="qmeta">' + r.slides + " slides &middot; " + r.flattened.length +
         " dead</span></button>";
     });
     q.innerHTML = html;
@@ -724,10 +687,10 @@
     }
 
     dropEl.classList.remove("busy");
-    document.getElementById("dropTitle").textContent = "Drop a .pptx here";
+    document.getElementById("dropTitle").textContent = "Drop a .pptx";
     if (failed.length) {
-      say("Could not read: " + failed.join(", ") + ". A .pptx is a zip, so a renamed or " +
-          "corrupt file will fail here.");
+      say("Could not read: " + failed.join(", ") +
+          ". A .pptx is a zip, so a renamed or corrupt file will fail here.");
     }
     if (!done.length) return;
 
@@ -745,9 +708,7 @@
   ["dragleave", "drop"].forEach(function (n) {
     dropEl.addEventListener(n, function (e) { e.preventDefault(); dropEl.classList.remove("hot"); });
   });
-  dropEl.addEventListener("drop", function (e) {
-    handle(e.dataTransfer && e.dataTransfer.files);
-  });
+  dropEl.addEventListener("drop", function (e) { handle(e.dataTransfer && e.dataTransfer.files); });
   window.addEventListener("dragover", function (e) { e.preventDefault(); });
   window.addEventListener("drop", function (e) { e.preventDefault(); });
 
