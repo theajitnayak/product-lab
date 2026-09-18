@@ -1,0 +1,456 @@
+<title>DeckCheck</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F6F6F4;
+    --card: #FFFFFF;
+    --ink: #16171A;
+    --body: #43464D;
+    --muted: #767A83;
+    --rule: #E0E0DC;
+    --rule-strong: #C9C9C4;
+    --good: #1B6B45;
+    --good-bg: #E6F1EA;
+    --warn: #8A5A0B;
+    --warn-bg: #FAF0DC;
+    --bad: #B3291F;
+    --bad-bg: #FBE8E5;
+    --lift: 0 1px 2px rgba(22,23,26,.05), 0 4px 14px rgba(22,23,26,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #131417; --card: #1A1C20; --ink: #ECEDEF; --body: #B4B8C0;
+      --muted: #82868F; --rule: #2B2E34; --rule-strong: #3C4048;
+      --good: #6FC79B; --good-bg: #14271D; --warn: #DFB169; --warn-bg: #2A2216;
+      --bad: #F0897E; --bad-bg: #2D1917;
+      --lift: 0 1px 2px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #131417; --card: #1A1C20; --ink: #ECEDEF; --body: #B4B8C0;
+    --muted: #82868F; --rule: #2B2E34; --rule-strong: #3C4048;
+    --good: #6FC79B; --good-bg: #14271D; --warn: #DFB169; --warn-bg: #2A2216;
+    --bad: #F0897E; --bad-bg: #2D1917;
+    --lift: 0 1px 2px rgba(0,0,0,.5);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15.5px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+
+  header { padding-block: 34px 8px; }
+  h1 {
+    font-family: Newsreader, Georgia, serif; font-weight: 600;
+    font-size: clamp(38px, 8vw, 58px); letter-spacing: -.02em;
+    margin: 0; line-height: 1.02;
+  }
+  .lede { font-size: 17px; color: var(--body); max-width: 60ch; margin: 10px 0 0; }
+  .lede b { color: var(--ink); font-weight: 600; }
+
+  .drop {
+    margin-top: 22px; background: var(--card); border: 2px dashed var(--rule-strong);
+    border-radius: 12px; padding: 30px 22px; text-align: center; cursor: pointer;
+    transition: border-color .12s, background .12s;
+  }
+  .drop:hover, .drop.hot { border-color: var(--ink); background: var(--card); }
+  .drop.hot { border-style: solid; }
+  .drop h2 { font-family: Newsreader, Georgia, serif; font-weight: 500; font-size: 22px; margin: 0 0 4px; }
+  .drop p { margin: 0; color: var(--muted); font-size: 14px; }
+  .drop .privacy {
+    margin-top: 12px; font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11.5px; color: var(--good); letter-spacing: .01em;
+  }
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+  .flash { margin-top: 14px; padding: 12px 15px; border-radius: 8px; font-size: 14px;
+    background: var(--bad-bg); color: var(--bad); border: 1px solid var(--rule); }
+
+  .banner {
+    margin-top: 20px; font-family: "JetBrains Mono", monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .banner::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  .report { margin-top: 12px; }
+  .scorecard {
+    background: var(--card); border: 1px solid var(--rule); border-radius: 12px;
+    box-shadow: var(--lift); overflow: hidden;
+  }
+  .score-top { display: flex; gap: 26px; align-items: center; padding: 26px 24px; flex-wrap: wrap; }
+  .dial { position: relative; width: 132px; height: 132px; flex: none; }
+  .dial svg { transform: rotate(-90deg); display: block; }
+  .dial .num {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: Newsreader, Georgia, serif; font-weight: 600; font-size: 42px;
+    font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  }
+  .score-say { flex: 1 1 260px; min-width: 0; }
+  .score-say .file {
+    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted);
+    word-break: break-all; margin-bottom: 6px;
+  }
+  .score-say .verdict {
+    font-family: Newsreader, Georgia, serif; font-size: 25px; font-weight: 500;
+    line-height: 1.28; margin: 0; text-wrap: balance;
+  }
+  .score-say .sub { margin: 8px 0 0; color: var(--body); font-size: 14.5px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); }
+  .cell { background: var(--card); padding: 13px 16px; }
+  .cell .v { font-family: "JetBrains Mono", monospace; font-size: 21px; font-weight: 500;
+    font-variant-numeric: tabular-nums; line-height: 1.25; }
+  .cell .l { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+  .cell.alarm .v { color: var(--bad); }
+
+  .finding { background: var(--card); border: 1px solid var(--rule); border-radius: 10px;
+    padding: 16px 18px; margin-top: 12px; box-shadow: var(--lift); }
+  .finding.bad { background: var(--bad-bg); border-color: transparent; }
+  .finding.warn { background: var(--warn-bg); border-color: transparent; }
+  .finding h3 { margin: 0 0 6px; font-size: 15.5px; font-weight: 600; }
+  .finding.bad h3 { color: var(--bad); }
+  .finding.warn h3 { color: var(--warn); }
+  .finding p { margin: 0; font-size: 14.5px; color: var(--body); }
+  .finding.bad p, .finding.warn p { color: inherit; opacity: .92; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .chip { font-family: "JetBrains Mono", monospace; font-size: 11.5px; padding: 2px 8px;
+    border-radius: 4px; background: var(--card); border: 1px solid var(--rule); }
+
+  details { margin-top: 12px; background: var(--card); border: 1px solid var(--rule);
+    border-radius: 10px; box-shadow: var(--lift); }
+  summary { padding: 13px 18px; cursor: pointer; font-weight: 500; font-size: 14.5px; }
+  summary::marker { color: var(--muted); }
+  .scroller { overflow-x: auto; border-top: 1px solid var(--rule); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: right; padding: 8px 14px; border-bottom: 1px solid var(--rule);
+    font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--muted); font-weight: 500; font-family: "Public Sans", sans-serif; }
+  td.state-bad { color: var(--bad); }
+  td.state-ok { color: var(--good); }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  .notes { margin: 30px 0 46px; border-top: 1px solid var(--rule); padding-top: 22px; }
+  .notes h2 { font-family: Newsreader, Georgia, serif; font-weight: 500; font-size: 20px; margin: 0 0 10px; }
+  .notes ul { margin: 0; padding-left: 20px; color: var(--body); font-size: 14.5px; }
+  .notes li { margin-bottom: 7px; }
+  .notes a { color: inherit; }
+  .notes .foot { margin-top: 16px; font-size: 13px; color: var(--muted); }
+
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>DeckCheck</h1>
+    <p class="lede">AI slide tools make a beautiful draft, then export a PowerPoint where
+      the words are pixels. Text boxes shift, fonts substitute, charts stop being charts.
+      <b>You usually find out in front of the client.</b> Drop a deck here and find out now.</p>
+  </header>
+
+  <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose a PowerPoint file to audit">
+    <h2>Drop a .pptx here</h2>
+    <p>or click to choose a file</p>
+    <div class="privacy">Runs entirely in your browser. The file is never uploaded.</div>
+  </div>
+  <input type="file" id="file" accept=".pptx,.potx,application/vnd.openxmlformats-officedocument.presentationml.presentation">
+
+  <div id="flash" hidden class="flash"></div>
+
+  <div class="banner" id="banner">Example result</div>
+  <div class="report" id="report"></div>
+
+  <section class="notes">
+    <h2>What it checks, and what it cannot</h2>
+    <ul>
+      <li><b>A slide counts as dead</b> when one picture covers 82% of it and fewer than
+        25 live characters remain. Those words are pixels and there is no repair path.</li>
+      <li><b>It cannot see a picture that ought to be a chart.</b> It reports that you have
+        pictures and no live charts. Whether that matters is your call.</li>
+      <li><b>A deliberate text-free cover slide will be flagged.</b> Read the slide list,
+        not just the score.</li>
+      <li><b>Font risk is judged against the faces that ship with Office.</b> A font your
+        whole team has installed still gets flagged. Embedded fonts clear it.</li>
+      <li><b>The score is a summary. The counts underneath it are the evidence</b>, and
+        those are the part worth arguing with.</li>
+    </ul>
+    <p class="foot">Same logic as the command line version in
+      <a href="https://github.com/theajitnayak/product-lab">theajitnayak/product-lab</a>, MIT licensed.
+      Your file is read in this page and never sent anywhere.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+  var NS_A = "http://schemas.openxmlformats.org/drawingml/2006/main";
+  var NS_P = "http://schemas.openxmlformats.org/presentationml/2006/main";
+  var CHART_URI = NS_A.replace("/main", "/chart");
+  var TABLE_URI = NS_A.replace("/main", "/table");
+  var DIAGRAM_URI = NS_A.replace("/main", "/diagram");
+
+  var FULL_BLEED = 0.82, TEXT_FLOOR = 25;
+  var DEFAULT_W = 12192000, DEFAULT_H = 6858000;
+
+  var SAFE_FONTS = ["arial","calibri","calibri light","cambria","times new roman","courier new",
+    "verdana","tahoma","trebuchet ms","georgia","segoe ui","segoe ui light","segoe ui semibold",
+    "wingdings","wingdings 2","wingdings 3","webdings","symbol","impact","comic sans ms",
+    "arial black","book antiqua","bookman old style","century schoolbook","consolas","corbel",
+    "candara","constantia","franklin gothic medium","garamond","palatino linotype","sylfaen",
+    "ms pgothic","aptos","aptos display"];
+
+  // A real audit of a deck exported as flat pictures. Drop a file to replace it.
+  var EXAMPLE = {
+    file: "flattened-deck.pptx", slides: 4, score: 25,
+    flattened: [1, 2, 3, 4], chars: 0, boxes: 0, pictures: 4, charts: 0, tables: 0,
+    fontsUsed: [], fontsAtRisk: [], embedded: false,
+    per: [{n:1,chars:0,boxes:0,pics:1,charts:0,flat:true},
+          {n:2,chars:0,boxes:0,pics:1,charts:0,flat:true},
+          {n:3,chars:0,boxes:0,pics:1,charts:0,flat:true},
+          {n:4,chars:0,boxes:0,pics:1,charts:0,flat:true}]
+  };
+
+  function verdictFor(s) {
+    if (s >= 85) return "Native. Edit it like any other deck.";
+    if (s >= 60) return "Mostly editable. Expect some repair before it ships.";
+    if (s >= 30) return "Heavy repair. Budget real time before the meeting.";
+    return "This is a picture of a presentation, not a presentation.";
+  }
+  function toneFor(s) { return s >= 85 ? "good" : s >= 60 ? "warn" : "bad"; }
+
+  function textIn(el) {
+    var nodes = el.getElementsByTagNameNS(NS_A, "t"), out = "";
+    for (var i = 0; i < nodes.length; i++) out += nodes[i].textContent || "";
+    return out;
+  }
+  function fontsIn(el, into) {
+    ["latin", "ea", "cs"].forEach(function (tag) {
+      var nodes = el.getElementsByTagNameNS(NS_A, tag);
+      for (var i = 0; i < nodes.length; i++) {
+        var face = (nodes[i].getAttribute("typeface") || "").trim();
+        if (face && face.charAt(0) !== "+") into[face] = true;
+      }
+    });
+  }
+  function extentOf(pic) {
+    var xf = pic.getElementsByTagNameNS(NS_A, "xfrm");
+    if (!xf.length) return null;
+    var ext = xf[0].getElementsByTagNameNS(NS_A, "ext");
+    if (!ext.length) return null;
+    var cx = parseInt(ext[0].getAttribute("cx"), 10), cy = parseInt(ext[0].getAttribute("cy"), 10);
+    return (isNaN(cx) || isNaN(cy)) ? null : cx * cy;
+  }
+
+  function analyseSlide(xml, area, fonts) {
+    var doc = new DOMParser().parseFromString(xml, "application/xml");
+    var out = { chars: 0, boxes: 0, pics: 0, bleed: 0, charts: 0, tables: 0, flat: false };
+    if (doc.getElementsByTagName("parsererror").length) return out;
+
+    var sps = doc.getElementsByTagNameNS(NS_P, "sp");
+    for (var i = 0; i < sps.length; i++) {
+      var t = textIn(sps[i]).trim();
+      if (t) { out.boxes++; out.chars += t.length; }
+      fontsIn(sps[i], fonts);
+    }
+    var pics = doc.getElementsByTagNameNS(NS_P, "pic");
+    for (var j = 0; j < pics.length; j++) {
+      out.pics++;
+      var a = extentOf(pics[j]);
+      if (a && area && a / area >= FULL_BLEED) out.bleed++;
+    }
+    var frames = doc.getElementsByTagNameNS(NS_P, "graphicFrame");
+    for (var k = 0; k < frames.length; k++) {
+      var gd = frames[k].getElementsByTagNameNS(NS_A, "graphicData");
+      var uri = gd.length ? (gd[0].getAttribute("uri") || "") : "";
+      if (uri === CHART_URI) out.charts++;
+      else if (uri === TABLE_URI) { out.tables++; out.chars += textIn(frames[k]).trim().length; }
+      else if (uri === DIAGRAM_URI) { /* SmartArt: counted as neither */ }
+      fontsIn(frames[k], fonts);
+    }
+    out.flat = out.bleed > 0 && out.chars < TEXT_FLOOR;
+    return out;
+  }
+
+  async function audit(file) {
+    var zip = await JSZip.loadAsync(file);
+    var names = Object.keys(zip.files);
+
+    var w = DEFAULT_W, h = DEFAULT_H;
+    if (zip.file("ppt/presentation.xml")) {
+      var pres = new DOMParser().parseFromString(
+        await zip.file("ppt/presentation.xml").async("string"), "application/xml");
+      var sz = pres.getElementsByTagNameNS(NS_P, "sldSz");
+      if (sz.length) {
+        var cx = parseInt(sz[0].getAttribute("cx"), 10), cy = parseInt(sz[0].getAttribute("cy"), 10);
+        if (!isNaN(cx) && !isNaN(cy)) { w = cx; h = cy; }
+      }
+    }
+    var area = w * h;
+
+    var slideNames = names.filter(function (n) {
+      return /^ppt\/slides\/slide\d+\.xml$/.test(n);
+    }).sort(function (a, b) {
+      return parseInt(a.match(/(\d+)/)[1], 10) - parseInt(b.match(/(\d+)/)[1], 10);
+    });
+    if (!slideNames.length) throw new Error("No slides found. Is this really a .pptx?");
+
+    var embedded = names.some(function (n) { return n.indexOf("ppt/fonts/") === 0; });
+    var chartParts = names.filter(function (n) {
+      return /^ppt\/charts\/chart\d+\.xml$/.test(n);
+    }).length;
+
+    var fonts = {}, per = [];
+    for (var i = 0; i < slideNames.length; i++) {
+      var found = analyseSlide(await zip.file(slideNames[i]).async("string"), area, fonts);
+      found.n = i + 1;
+      per.push(found);
+    }
+
+    var used = Object.keys(fonts).sort();
+    var risky = used.filter(function (f) { return SAFE_FONTS.indexOf(f.toLowerCase()) === -1; });
+    var flattened = per.filter(function (s) { return s.flat; }).map(function (s) { return s.n; });
+    var flatRatio = flattened.length / per.length;
+    var riskRatio = embedded || !used.length ? 0 : risky.length / used.length;
+    var score = Math.max(0, Math.min(100, Math.round(100 - 75 * flatRatio - 25 * riskRatio)));
+
+    function sum(key) { return per.reduce(function (t, s) { return t + s[key]; }, 0); }
+    return {
+      file: file.name, slides: per.length, score: score, flattened: flattened,
+      chars: sum("chars"), boxes: sum("boxes"), pictures: sum("pics"),
+      charts: Math.max(chartParts, sum("charts")), tables: sum("tables"),
+      fontsUsed: used, fontsAtRisk: embedded ? [] : risky, embedded: embedded, per: per
+    };
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function draw(r) {
+    var tone = toneFor(r.score);
+    var colour = tone === "good" ? "var(--good)" : tone === "warn" ? "var(--warn)" : "var(--bad)";
+    var C = 2 * Math.PI * 56;
+    var dash = (r.score / 100) * C;
+
+    var html = '<div class="scorecard"><div class="score-top">' +
+      '<div class="dial"><svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true">' +
+        '<circle cx="66" cy="66" r="56" fill="none" stroke="var(--rule)" stroke-width="11"></circle>' +
+        '<circle cx="66" cy="66" r="56" fill="none" stroke="' + colour + '" stroke-width="11" ' +
+          'stroke-linecap="round" stroke-dasharray="' + dash.toFixed(1) + ' ' + C.toFixed(1) + '"></circle>' +
+      '</svg><div class="num" style="color:' + colour + '">' + r.score + '</div></div>' +
+      '<div class="score-say"><div class="file">' + esc(r.file) + '</div>' +
+      '<p class="verdict">' + verdictFor(r.score) + '</p>' +
+      '<p class="sub">' + r.slides + ' slide' + (r.slides === 1 ? "" : "s") + ' inspected. ' +
+        'Score out of 100, where 100 means every word is still editable.</p></div></div>';
+
+    var cells = [
+      ["Slides", r.slides, false],
+      ["Slides that are just an image", r.flattened.length, r.flattened.length > 0],
+      ["Editable text boxes", r.boxes, false],
+      ["Editable characters", r.chars.toLocaleString(), false],
+      ["Native charts", r.charts, false],
+      ["Native tables", r.tables, false],
+      ["Pictures", r.pictures, false]
+    ];
+    html += '<div class="grid">' + cells.map(function (c) {
+      return '<div class="cell' + (c[2] ? " alarm" : "") + '"><div class="v">' + c[1] +
+        '</div><div class="l">' + c[0] + '</div></div>';
+    }).join("") + '</div></div>';
+
+    if (r.flattened.length) {
+      var shown = r.flattened.slice(0, 24).join(", ") + (r.flattened.length > 24 ? ", ..." : "");
+      html += '<div class="finding bad"><h3>' + r.flattened.length + ' slide' +
+        (r.flattened.length === 1 ? "" : "s") + ' cannot be edited at all</h3>' +
+        '<p>Slide ' + shown + ' ' + (r.flattened.length === 1 ? "is" : "are") +
+        ' a single full-bleed picture with no live text. Changing one word means rebuilding ' +
+        'the slide from scratch, because the words are pixels.</p></div>';
+    }
+
+    if (r.fontsAtRisk.length) {
+      html += '<div class="finding warn"><h3>' + r.fontsAtRisk.length +
+        ' font' + (r.fontsAtRisk.length === 1 ? "" : "s") + ' will substitute</h3>' +
+        '<p>These do not ship with Office, so PowerPoint picks a replacement on whoever opens ' +
+        'the file. Line breaks and spacing move.</p><div class="chips">' +
+        r.fontsAtRisk.map(function (f) { return '<span class="chip">' + esc(f) + '</span>'; }).join("") +
+        '</div></div>';
+    } else if (r.embedded) {
+      html += '<div class="finding"><h3>Fonts are embedded</h3>' +
+        '<p>They travel with the file, so it renders as authored on another machine.</p></div>';
+    }
+
+    if (r.pictures && !r.charts) {
+      html += '<div class="finding warn"><h3>No native charts</h3><p>' + r.pictures +
+        ' picture' + (r.pictures === 1 ? "" : "s") + ' and zero live charts. If any of those ' +
+        'is a chart, its numbers are gone: nobody can update the figures, restyle it, or check ' +
+        'where the data came from.</p></div>';
+    }
+
+    html += '<details><summary>Slide by slide</summary><div class="scroller"><table>' +
+      '<thead><tr><th>Slide</th><th>Characters</th><th>Text boxes</th><th>Pictures</th>' +
+      '<th>Charts</th><th>State</th></tr></thead><tbody>' +
+      r.per.map(function (s) {
+        return '<tr><td>' + s.n + '</td><td>' + s.chars + '</td><td>' + s.boxes + '</td>' +
+          '<td>' + s.pics + '</td><td>' + s.charts + '</td>' +
+          '<td class="' + (s.flat ? "state-bad" : "state-ok") + '">' +
+          (s.flat ? "dead" : "editable") + '</td></tr>';
+      }).join("") + '</tbody></table></div></details>';
+
+    document.getElementById("report").innerHTML = html;
+  }
+
+  var dropEl = document.getElementById("drop");
+  var fileEl = document.getElementById("file");
+  var flashEl = document.getElementById("flash");
+  var bannerEl = document.getElementById("banner");
+
+  function say(message) {
+    flashEl.textContent = message;
+    flashEl.hidden = !message;
+  }
+
+  async function handle(file) {
+    if (!file) return;
+    say("");
+    if (!/\.(pptx|potx)$/i.test(file.name)) {
+      say("That is not a .pptx file. PowerPoint can save one with File, Save As.");
+      return;
+    }
+    bannerEl.textContent = "Reading " + file.name;
+    try {
+      var report = await audit(file);
+      bannerEl.textContent = "Your result";
+      draw(report);
+      document.getElementById("report").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (err) {
+      bannerEl.textContent = "Example result";
+      say("Could not read that file: " + (err && err.message ? err.message : err));
+    }
+  }
+
+  dropEl.addEventListener("click", function () { fileEl.click(); });
+  dropEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileEl.click(); }
+  });
+  fileEl.addEventListener("change", function (e) { handle(e.target.files[0]); });
+  ["dragenter", "dragover"].forEach(function (name) {
+    dropEl.addEventListener(name, function (e) { e.preventDefault(); dropEl.classList.add("hot"); });
+  });
+  ["dragleave", "drop"].forEach(function (name) {
+    dropEl.addEventListener(name, function (e) { e.preventDefault(); dropEl.classList.remove("hot"); });
+  });
+  dropEl.addEventListener("drop", function (e) {
+    handle(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null);
+  });
+  window.addEventListener("dragover", function (e) { e.preventDefault(); });
+  window.addEventListener("drop", function (e) { e.preventDefault(); });
+
+  draw(EXAMPLE);
+</script>
