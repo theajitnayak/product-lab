@@ -113,6 +113,12 @@ gets in. Edit [themes.py](themes.py) to match a client's brand.
 - **100/100 means editable, not good.** DeckCheck measures whether a deck is
   native. It has no opinion on whether it is worth presenting. That judgement is
   the thing being sold.
+- **The safe font list is Latin only.** Cambria and Calibri do not carry Indic,
+  Arabic, Thai or CJK glyphs. A deck in Odia, Hindi or Bengali needs a font that
+  covers the script, and the ones that do are not on the safe list because they
+  do not ship everywhere. Set it explicitly in [themes.py](themes.py) for those
+  jobs and confirm on the client's machine, not yours. Extract handles the text
+  correctly either way; this is a rendering limit, not a data one.
 
 ## Tests
 

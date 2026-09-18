@@ -120,36 +120,48 @@ def extract(path):
         heading = found["text"][0] if found["text"] else f"Slide {number}"
         rest = [t for t in found["text"][1:] if t != heading]
 
+        # One slide kind cannot always hold everything a busy slide carried.
+        # Whatever a kind does not consume is parked in the notes rather than
+        # dropped, because losing a client's words is the one unforgivable bug.
+        spec, used = None, []
+
         if found["charts"]:
             spec = _chart_spec(found["charts"][0], heading)
-            if spec:
-                if notes:
-                    spec["notes"] = notes
-                slides.append(spec)
-                continue
-            warnings.append(f"Slide {number}: a chart was found but its data could not be read")
+            if spec is None:
+                warnings.append(
+                    f"Slide {number}: a chart was found but its data could not be read")
 
-        if found["tables"]:
+        if spec is None and found["tables"]:
             rows = found["tables"][0]
             if len(rows) >= 2:
-                slides.append({"kind": "table", "heading": heading,
-                               "columns": rows[0], "rows": rows[1:],
-                               **({"notes": notes} if notes else {})})
-                continue
+                spec = {"kind": "table", "heading": heading,
+                        "columns": rows[0], "rows": rows[1:]}
 
-        if number == 1:
-            slides.append({"kind": "title", "title": heading,
-                           "subtitle": rest[0] if rest else "",
-                           **({"notes": notes} if notes else {})})
-            continue
+        if spec is None and number == 1:
+            spec = {"kind": "title", "title": heading, "subtitle": rest[0] if rest else ""}
+            used = rest[:1]
+        elif spec is None and not rest:
+            spec = {"kind": "section", "number": f"{number:02d}", "title": heading}
+        elif spec is None:
+            spec = {"kind": "bullets", "heading": heading, "points": rest}
+            used = rest
 
-        if not rest:
-            slides.append({"kind": "section", "number": f"{number:02d}", "title": heading,
-                           **({"notes": notes} if notes else {})})
-            continue
+        spare = [line for line in rest if line not in used]
+        extra_tables = found["tables"][1:] if spec["kind"] == "table" else found["tables"]
+        parked = []
+        if spare:
+            parked.append("UNPLACED TEXT FROM THIS SLIDE:\n" + "\n".join(spare))
+        for table in extra_tables:
+            flat = "\n".join(" | ".join(cell for cell in row) for row in table)
+            parked.append("UNPLACED TABLE FROM THIS SLIDE:\n" + flat)
+        if parked:
+            warnings.append(
+                f"Slide {number}: content moved to the notes, place it by hand")
 
-        slides.append({"kind": "bullets", "heading": heading, "points": rest,
-                       **({"notes": notes} if notes else {})})
+        carried = [part for part in ([notes] if notes else []) + parked if part]
+        if carried:
+            spec["notes"] = "\n\n".join(carried)
+        slides.append(spec)
 
     return {"theme": "midnight", "slides": slides}, warnings
 

@@ -152,9 +152,10 @@ def main():
     if lost > 0:
         share = lost / max(1, before["editable_characters"])
         problems.append(
-            f"{lost:,} characters ({share:.0%}) did not make it into the rebuild. "
-            "Some of that is the slides whose text was pixels. The rest is content "
-            "extract could not reach, and you have to put it back by hand.")
+            f"{lost:,} characters ({share:.0%}) are not on the rebuilt slides. "
+            "Some of that is the slides whose text was pixels and is gone for good. "
+            "The rest was parked in the speaker notes by extract, marked UNPLACED, "
+            "and still has to be laid out by hand.")
     for key, label in (("native_tables", "table"), ("native_charts", "chart")):
         missing = before[key] - after[key]
         if missing > 0:

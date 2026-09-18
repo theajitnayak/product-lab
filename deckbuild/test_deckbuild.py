@@ -170,6 +170,26 @@ class ExtractTests(unittest.TestCase):
         self.temp.append(path)
         self.assertEqual(deckcheck.audit(path)["score"], 100)
 
+    def test_unplaceable_text_is_parked_not_dropped(self):
+        """A table slide that also carried prose must not lose the prose."""
+        recovered, warnings = self.build_and_extract(minimal(
+            {"kind": "bullets", "heading": "Findings",
+             "points": ["First point that matters", "Second point that matters",
+                        "Third point that matters"]},
+            {"kind": "table", "heading": "Status", "columns": ["Item", "State"],
+             "rows": [["Portal", "Slipped"]],
+             "notes": "keep me"}))
+        blob = json.dumps(recovered)
+        for point in ("First point", "Second point", "Third point"):
+            self.assertIn(point, blob)
+
+    def test_non_latin_text_survives(self):
+        """Found on a real deck: Odia text was being dropped silently."""
+        odia = "ଏହି ପାଠ ଯୋଜନା"
+        recovered, _ = self.build_and_extract(minimal(
+            {"kind": "bullets", "heading": "Heading", "points": [odia, "second line"]}))
+        self.assertIn(odia, json.dumps(recovered, ensure_ascii=False))
+
     def test_dead_slide_is_flagged_for_retyping(self):
         """extract and deckcheck must agree on which slides are unrecoverable."""
         samples = Path(__file__).parents[1] / "deckcheck" / "samples" / "flattened-deck.pptx"
