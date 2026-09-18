@@ -35,10 +35,32 @@ python extract.py client.pptx -o draft.json
 
 # 4. Rebuild, and prove it.
 python build.py draft.json -o rebuilt.pptx --verify --theme forest
+
+# 5. Show the client what changed.
+python proof.py client.pptx rebuilt.pptx --html proof.html
 ```
 
 Step 3 is the work, and it is the part worth paying you for. The tools handle
 the mechanical half; taste is the half a competitor cannot copy.
+
+## Step 3 is not optional
+
+`extract.py` cannot reach everything. On a real 25-slide deck the automatic
+round trip came back 6% short on text and dropped a table, because some content
+sits in grouped shapes and placeholders it does not follow.
+
+`proof.py` refuses to bless that. It exits non-zero and says so:
+
+```
+Check before sending:
+  - 652 characters (6%) did not make it into the rebuild. Some of that is the
+    slides whose text was pixels. The rest is content extract could not reach,
+    and you have to put it back by hand.
+  - 1 table(s) present before are missing now.
+```
+
+**A rebuild that silently drops a client's content is worse than no rebuild.**
+Run `proof.py` before you send anything, and treat a non-zero exit as a stop.
 
 **Extract tells you what it could not save:**
 

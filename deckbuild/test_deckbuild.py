@@ -181,5 +181,55 @@ class ExtractTests(unittest.TestCase):
         self.assertTrue(any(extract.RETYPE in json.dumps(s) for s in recovered["slides"]))
 
 
+class ProofTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = []
+
+    def tearDown(self):
+        for path in self.temp:
+            path.unlink(missing_ok=True)
+
+    def make(self, spec):
+        path = written(build.build(spec))
+        self.temp.append(path)
+        return path
+
+    def test_improvement_reads_as_improvement(self):
+        import proof
+        samples = Path(__file__).parents[1] / "deckcheck" / "samples" / "flattened-deck.pptx"
+        if not samples.exists():
+            self.skipTest("run deckcheck/make_samples.py first")
+        before = proof.measure(samples)
+        after = proof.measure(self.make(json.loads(EXAMPLE.read_text(encoding="utf-8"))))
+        rows = proof.compare(before, after)
+        score_row = [r for r in rows if r["label"] == "Score out of 100"][0]
+        self.assertEqual(score_row["mood"], "good")
+        dead_row = [r for r in rows if r["label"] == "Slides you cannot edit"][0]
+        self.assertEqual(dead_row["mood"], "good", "fewer dead slides is an improvement")
+
+    def test_losing_editable_text_reads_as_a_regression(self):
+        import proof
+        rows = proof.compare({"score": 90, "dead": 0, "text_boxes": 10,
+                              "editable_characters": 1000, "native_charts": 1,
+                              "native_tables": 1, "risky": 0},
+                             {"score": 100, "dead": 0, "text_boxes": 4,
+                              "editable_characters": 300, "native_charts": 1,
+                              "native_tables": 1, "risky": 0})
+        chars = [r for r in rows if r["label"] == "Editable characters"][0]
+        self.assertEqual(chars["mood"], "bad")
+        self.assertEqual(chars["change"], "-700")
+
+    def test_card_is_escaped_html(self):
+        import proof
+        before = {"file": "<script>x</script>.pptx", "score": 40,
+                  "verdict": "bad & broken", "dead": 2, "text_boxes": 1,
+                  "editable_characters": 10, "native_charts": 0, "native_tables": 0,
+                  "risky": 0, "flattened_slides": [1, 2]}
+        after = dict(before, score=100, verdict="good")
+        markup = proof.card(before, after, proof.compare(before, after))
+        self.assertNotIn("<script>", markup)
+        self.assertIn("&lt;script&gt;", markup)
+
+
 if __name__ == "__main__":
     unittest.main()
