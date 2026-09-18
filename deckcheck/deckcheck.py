@@ -174,6 +174,12 @@ def audit(path):
     if embedded:
         risk_ratio = 0.0            # embedded fonts travel with the file
     score = max(0, min(100, round(100 - 75 * flat_ratio - 25 * risk_ratio)))
+    # A long deck can hide a few dead slides behind a good ratio. Two unfixable
+    # slides out of twenty-five scores 94 on the arithmetic alone, which would
+    # read as "native" and send someone into a meeting unaware. One dead slide
+    # is enough to disqualify a deck from that verdict.
+    if flattened:
+        score = min(score, 84)
 
     return {
         "file": path.name,

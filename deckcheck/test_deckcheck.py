@@ -75,6 +75,35 @@ class ScoringTests(unittest.TestCase):
     def test_safe_font_list_is_lowercase(self):
         self.assertTrue(all(f == f.lower() for f in deckcheck.SAFE_FONTS))
 
+    def test_any_dead_slide_blocks_the_native_verdict(self):
+        """Found on a real 25-slide deck: 2 dead slides scored 94 and read as native."""
+        import io
+        import zipfile
+
+        pres = ('<p:presentation xmlns:p="http://schemas.openxmlformats.org/'
+                'presentationml/2006/main"><p:sldSz cx="12192000" cy="6858000"/>'
+                '</p:presentation>')
+        wordy = SHELL.format(body=TEXTBOX.format(
+            font="Calibri", text="A slide with a real sentence on it that is long enough"))
+        dead = SHELL.format(body=PICTURE.format(cx=12192000, cy=6858000))
+
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr("ppt/presentation.xml", pres)
+            for n in range(1, 24):
+                archive.writestr(f"ppt/slides/slide{n}.xml", wordy)
+            for n in (24, 25):
+                archive.writestr(f"ppt/slides/slide{n}.xml", dead)
+        temp = Path(__file__).parent / "_scoring_fixture.pptx"
+        temp.write_bytes(buffer.getvalue())
+        try:
+            report = deckcheck.audit(temp)
+            self.assertEqual(len(report["flattened_slides"]), 2)
+            self.assertLessEqual(report["score"], 84)
+            self.assertNotIn("Native", report["verdict"])
+        finally:
+            temp.unlink()
+
 
 @unittest.skipUnless((SAMPLES / "native-deck.pptx").exists(),
                      "run make_samples.py first")
