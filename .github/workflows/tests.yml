@@ -31,3 +31,8 @@ jobs:
           if python deckcheck.py samples/flattened-deck.pptx --min-score 70; then
             echo "Expected the flattened deck to fail"; exit 1
           fi
+      - name: DeckBuild output must score 100
+        working-directory: deckbuild
+        run: |
+          python -m unittest discover -p "test_*.py" -v
+          python build.py examples/quarterly.json -o out/ci.pptx --verify

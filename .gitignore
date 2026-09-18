@@ -10,3 +10,6 @@ clients/
 
 # Generated demo decks. Rebuild with: python make_samples.py
 deckcheck/samples/
+
+# Built decks and recovered drafts
+deckbuild/out/

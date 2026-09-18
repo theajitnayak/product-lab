@@ -1,0 +1,100 @@
+{
+  "theme": "midnight",
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Quarterly business review",
+      "subtitle": "Where revenue came from, what slipped, and the one priority for next quarter",
+      "footer": "Prepared for the board",
+      "notes": "Fictional figures. This deck exists to demonstrate native output."
+    },
+    {
+      "kind": "section",
+      "number": "01",
+      "title": "What happened",
+      "note": "Three revenue lines carried the quarter. One did not."
+    },
+    {
+      "kind": "stats",
+      "kicker": "The quarter in four numbers",
+      "heading": "Revenue held, margin improved",
+      "items": [
+        { "value": "$412K", "label": "Revenue, up 18% on the previous quarter" },
+        { "value": "64%", "label": "Gross margin, up four points" },
+        { "value": "11", "label": "Active retainer clients" },
+        { "value": "2", "label": "Commitments moved to next quarter" }
+      ],
+      "note": "Margin improvement came from retiring two loss-making projects, not from raising prices."
+    },
+    {
+      "kind": "chart",
+      "kicker": "By line of business",
+      "heading": "Retainers carried the quarter",
+      "chart_type": "column",
+      "categories": ["Retainers", "Projects", "Licensing", "Advisory"],
+      "series": [
+        { "name": "This quarter", "values": [198000, 140000, 52000, 22000] },
+        { "name": "Last quarter", "values": [162000, 131000, 38000, 18000] }
+      ],
+      "notes": "Every figure here is editable in PowerPoint. Right click, Edit Data."
+    },
+    {
+      "kind": "columns",
+      "kicker": "Honest read",
+      "heading": "What worked, and what did not",
+      "columns": [
+        {
+          "title": "Worked",
+          "points": [
+            "Retainer conversions from project work",
+            "Retiring two loss-making engagements",
+            "Faster invoicing cut days sales outstanding"
+          ]
+        },
+        {
+          "title": "Did not work",
+          "points": [
+            "Onboarding rebuild slipped a full quarter",
+            "Partner portal never left discovery",
+            "Two proposals lost on price, not on fit"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "table",
+      "kicker": "Commitments",
+      "heading": "Status against what we said last quarter",
+      "columns": ["Commitment", "Owner", "Status", "Moves to"],
+      "rows": [
+        ["Onboarding rebuild", "Design", "Slipped", "Q3"],
+        ["Partner portal", "Product", "Slipped", "Q3"],
+        ["Invoicing automation", "Ops", "Shipped", "-"],
+        ["Pricing review", "Finance", "Shipped", "-"],
+        ["Support handbook", "Ops", "In progress", "Q3"]
+      ]
+    },
+    {
+      "kind": "quote",
+      "text": "We stopped taking work we were bad at. That single decision explains most of the margin improvement.",
+      "attribution": "Operations review, internal"
+    },
+    {
+      "kind": "bullets",
+      "kicker": "Next quarter",
+      "heading": "One priority, stated plainly",
+      "points": [
+        "Ship the onboarding rebuild. Nothing else moves ahead of it.",
+        "Hold the retainer conversion rate rather than chasing new logos.",
+        "Decide on the partner portal by the end of month one, build it or kill it.",
+        "Keep the pricing floor. Two losses on price is acceptable."
+      ]
+    },
+    {
+      "kind": "closing",
+      "heading": "Questions",
+      "note": "Full figures and the commitment log are in the appendix pack.",
+      "contact": "board@example.com"
+    }
+  ]
+}

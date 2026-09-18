@@ -14,6 +14,20 @@ evidence actually said, and what happened next.
 | --- | --- | --- | --- | --- |
 | 01 | [deckcheck](deckcheck/) | AI slide tools export PowerPoint files you cannot edit | **Active** | Strongest demand evidence of any candidate, including the vendor admitting it |
 | 02 | [blast-radius](blast-radius/) | AI changelogs bury what broke under what launched | **Parked** | Idea was sound, market is saturated and the audience does not pay |
+| 03 | [deckbuild](deckbuild/) | Rebuilding a broken deck natively | **Active** | The paid half of 01 |
+
+**01 and 03 are one play.** DeckCheck is free and proves to someone that their
+deck is broken. DeckBuild rebuilds it. The audit is the qualification step, not
+a separate product, and the handoff between them is a single command:
+
+```bash
+python deckcheck/deckcheck.py client.pptx          # show them the problem
+python deckbuild/extract.py client.pptx -o d.json  # recover what survived
+python deckbuild/build.py d.json -o fixed.pptx --verify
+```
+
+That last flag exits non-zero unless the rebuilt deck scores 100. The sales
+promise is enforced by an exit code.
 
 Related, in its own repository:
 [ajit-agent-os](https://github.com/theajitnayak/ajit-agent-os) — extraction that
