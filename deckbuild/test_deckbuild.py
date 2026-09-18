@@ -97,6 +97,28 @@ class BuildTests(unittest.TestCase):
     def test_short_heading_keeps_full_size(self):
         self.assertEqual(build._fit("Short", build.Pt(44), 11.6, 1.6).pt, 44)
 
+    def test_stat_value_shrinks_rather_than_wrapping(self):
+        """Caught by rendering: $412K wrapped and the K landed on the label."""
+        card = 1.9   # inches, the inner width of a four-across stat card
+        self.assertLess(build._fit_one_line("$412K", build.Pt(50), card).pt, 50)
+        self.assertLess(build._fit_one_line("$1,250,000", build.Pt(50), card).pt, 30)
+
+    def test_short_stat_value_is_not_shrunk(self):
+        self.assertEqual(build._fit_one_line("11", build.Pt(50), 1.9).pt, 50)
+
+    def test_stat_value_never_goes_illegibly_small(self):
+        tiny = build._fit_one_line("x" * 200, build.Pt(50), 1.9)
+        self.assertGreaterEqual(tiny.pt, 12)
+
+    def test_stat_boxes_do_not_wrap(self):
+        deck = build.build(minimal(
+            {"kind": "stats", "heading": "Numbers",
+             "items": [{"value": "$412K", "label": "Revenue"},
+                       {"value": "64%", "label": "Margin"}]}))
+        wrapping = [shape for shape in deck.slides[0].shapes
+                    if shape.has_text_frame and shape.text_frame.word_wrap is False]
+        self.assertEqual(len(wrapping), 2, "both stat values should have wrapping off")
+
 
 class ValidationTests(unittest.TestCase):
     def test_unknown_slide_kind_is_named(self):

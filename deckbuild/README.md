@@ -120,6 +120,32 @@ gets in. Edit [themes.py](themes.py) to match a client's brand.
   jobs and confirm on the client's machine, not yours. Extract handles the text
   correctly either way; this is a rendering limit, not a data one.
 
+## Look at it before you send it
+
+The tests prove a deck is native. They cannot see that a number is sitting on
+top of a label. **Render every deck and look at it**, every time, before it goes
+to a client.
+
+```bash
+soffice --headless --convert-to pdf --outdir out out/deck.pptx
+```
+
+Then open the PDF. What to look for, in order of how often it happens:
+
+1. **Text past the edge of its box.** The most common defect by far.
+2. **Overlaps.** A stat value landing on the label under it, a heading running
+   into the content below.
+3. **A part-filled last row** in a grid of cards.
+4. **A chart legend or axis label colliding** with the plot.
+
+This is not a formality. Rendering the example deck is how the `$412K` wrap was
+found: it looked perfect in every structural check and scored 100, and the "K"
+was sitting on top of the label underneath it. Nothing but looking catches that.
+
+On Windows LibreOffice lives at
+`C:\Program Files\LibreOffice\program\soffice.exe`. Clear `PYTHONHOME` and
+`PYTHONPATH` first if you are in an activated virtualenv, or it fails to start.
+
 ## Tests
 
 ```bash

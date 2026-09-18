@@ -45,6 +45,20 @@ def rgb(hex_string):
     return RGBColor.from_string(hex_string)
 
 
+def _fit_one_line(text, base, width_in, glyph=0.58):
+    """Size a short string so it never wraps.
+
+    A big number that wraps puts its last character on top of the label below
+    it. `glyph` is the average character width as a fraction of point size, set
+    pessimistically for bold serif digits.
+    """
+    if not text:
+        return base
+    usable = width_in * 0.95
+    limit = (72 * usable) / (glyph * len(text))
+    return base if base.pt <= limit else Pt(max(12, int(limit)))
+
+
 def _fit(text, base, width_in, height_in, chars_per_line_at_base=52):
     """Step the size down when the text will not fit, rather than let it spill.
 
@@ -208,10 +222,12 @@ class Deck:
             left = MARGIN + position * (card_w + gap)
             self._card(slide, left, top, card_w, card_h)
             pad = Inches(0.35)
-            self._text(slide, str(item["value"]), left + pad, top + pad,
-                       card_w - 2 * pad, Inches(1.0),
-                       _fit(str(item["value"]), SIZES["stat"], card_w.inches, 1.0, 9),
-                       self.theme.accent, font=HEAD_FONT, bold=True)
+            inner = Emu(int(card_w - 2 * pad))
+            value = str(item["value"])
+            box = self._text(slide, value, left + pad, top + pad, inner, Inches(1.0),
+                             _fit_one_line(value, SIZES["stat"], inner.inches),
+                             self.theme.accent, font=HEAD_FONT, bold=True)
+            box.text_frame.word_wrap = False   # shrink instead, never wrap onto the label
             self._text(slide, item["label"], left + pad, top + pad + Inches(1.05),
                        card_w - 2 * pad, Inches(1.0), SIZES["stat_label"], self.theme.muted)
         if spec.get("note"):
